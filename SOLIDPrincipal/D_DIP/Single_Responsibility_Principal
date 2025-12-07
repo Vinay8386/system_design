@@ -1,5 +1,0 @@
-A class or module should have one and only reason to change.
-
-Class: Bluepring for object, Groups data members(fields) and function(behaviours).
-Method:" A function.
-Module/Component: A file or package containing related classes.
