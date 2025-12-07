@@ -1,0 +1,35 @@
+==============================================================================! Four Main Principal !==============================================================================================
+In System design, there are four main principal: KISS means keeping solutions simple. DRY means eliminating duplication. SOLID are five foundational OO design principles. 
+YAGNI means don’t build features until they are needed. Together they help write clean, maintainable, scalable software without over-engineering.
+
+1. KISS (Keep It Simple, Stupid): Prefer the simplest working solution. Avoid unnecessary complexity, abstractions, or over-engineering.
+  -> Why:
+    -> More readable + Easier to maintain + Fewer bugs
+    -> Example: Using Factory + Strategy + Observer to print a message. (❌ Overkill)
+                Simple (KISS): System.out.println("Hello");
+
+2. DRY (Don’t Repeat Yourself): Do not duplicate logic. Keep a single source of truth.
+  -> Why: 
+    -> Consistency
+    -> Less bug-prone    
+    -> Easier updates
+  -> Example
+    -> ❌ Tax calculation duplicated everywhere
+        price * 1.18;
+        foodCost * 1.18;
+        bill * 1.18;
+    -> ✔ DRY
+        double applyTax(double amount) { return amount * 1.18; }
+
+3. SOLID (Structure OO code properly - Clean, readable code)
+4. YAGNI (You Aren’t Gonna Need It)
+  -> Don’t build features until they are actually needed.
+  -> Avoid adding flexibility, configurations, or modules “just in case.”
+  -> Why: 
+    -> Prevents over-engineering
+    -> Saves time
+    -> Reduces unnecessary code
+    -> Keeps complexity low
+  -> Example
+    -> ❌ Adding 12 payment methods at the start even though only UPI is needed.
+    -> ✔ YAGNI : Implement only UPI now → add others later if required.
