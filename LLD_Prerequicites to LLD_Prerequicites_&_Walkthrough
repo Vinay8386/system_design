@@ -1,1 +1,291 @@
+============================================================! LLD Steps !=========================================================================
+1. Clarify Requirements: Ask for scope, features, constraints.
+2. Identify Core Entities: Objects, behaviours, responsibilities.
+3. Define Workflows: State transitions, sequence diagrams.
+4. Draft Class Diagram: Classes, interfaces, relationships (IS-A, HAS-A).
+5. Apply Design Principles & Patterns: SOLID + patterns + data structures.
+6. Walk Through End-to-End Flow: Explain how objects collaborate.
 
+==============================================! STEP 1: Requirements & Behaviour Clarification !==================================================
+
+=> Functional Requirements
+  -> What should the system do?
+  -> What are the main operations?
+  -> What are the inputs and outputs?
+=> Non-Functional Requirements
+  -> Scalability?
+  -> Performance?
+  -> Concurrency?
+  -> Persistence?
+  -> Fault tolerance?
+
+=> Identify Entities and Their Responsibilities
+  -> Ask What are the core objects?
+  -> Ask What behaviour does each object own?
+
+=> Identify States & Transitions: For Example 
+  -> ORDER: CREATED → PACKED → SHIPPED → DELIVERED
+  -> RIDE: REQUESTED → ASSIGNED → STARTED → COMPLETED → CANCELLED
+
+==============================================! STEP 2: Relationship Design (HAS-A or IS-A) !==================================================
+=> Identify Class Relationships
+  -> IS-A → inheritance (e.g., CreditCardPayment extends Payment)
+  -> HAS-A → composition/aggregation (e.g., Order has List<OrderItem>)
+=> Identify Interfaces & Abstract Classes. Pick them when:
+  -> multiple implementations
+  -> future extension expected
+  -> contract needed (strategy pattern, factory, etc.)
+=> Model Interactions. Create:
+  -> Class diagram
+  -> Sequence diagram
+  -> Component diagram (if needed)
+
+==============================================! STEP 3: Apply Principles & Design Patterns !==================================================
+=> Apply SOLID Principles
+  -> Single Responsibility
+  -> Open/Closed
+  -> Liskov Substitution
+  -> Interface Segregation
+  -> Dependency Inversion
+=> Identify Relevant Patterns. Example:
+  -> Factory / Abstract Factory — object creation
+  -> Strategy — interchangeable behaviour
+  -> Observer — notifications/events
+  -> Decorator — dynamic feature addition
+  -> Singleton — single instance
+  -> Builder — complex object creation
+  -> State — state transition logic
+=> Choose optimal data structures (Maps, queues, heaps, priority queues, trees, etc.)
+=> Handle edge cases
+  -> Performance bottlenecks
+  -> Concurrency
+  -> Storage
+  -> Thread safety
+  -> Rate limiting
+
+===========================================! FOOD DELIVERY SYSTEM – LOW LEVEL DESIGN (FULL WALKTHROUGH) !==================================================
+=> Step 1: Clarification Requirements:
+  -> Functional Requiorements: 
+    -> User should be able to:
+      -> Customer: 
+        -> Register/Login
+        -> Search Restaurent(by using location, cuisine)
+        -> Browse Menu
+        -> Add item to cart
+        -> Make Payment
+        -> Place Order
+        -> Track Order status
+        -> Rate Order
+      -> Restaurant
+        -> Manage menu (add/remove items)
+        -> Accept/reject orders
+        -> Update order status (PREPARING → READY → HANDED_TO_AGENT)
+      -> Delivery Agent
+        -> Get assigned orders
+        -> Accept/decline delivery
+        -> Update delivery status (ASSIGNED → PICKED_UP → DELIVERY_STARTED → DELIVERED)
+  -> Non-Functional Requirements:
+    -> Highly available
+    -> Supports high concurrency
+    -> Low-latency search
+    -> Scalable order assignment
+    -> Real-time tracking
+
+  -> Identify the core Entity
+    -> Customer
+    -> Restaurant
+    -> Menu & MenuItem
+    -> Cart
+    -> Order
+    -> OrderItem
+    -> DeliveryAgent
+    -> Payment
+    -> Location
+    -> Notification
+
+  -> Define State Workflow:
+    -> Order State
+        CREATED--->CONFIRMED--->PREPARING--->READY--->ASSIGNED_TO_AGENT--->PICKED_UP--->ON_THE_WAY--->DELIVERED--->CANCELLED(Optional)
+    -> Delivery Agent State
+        AVAILABLE--->UNAVAILABLE--->ASSIGNED
+
+=> Step 2: Identify the relationship:
+  -> A Restaurant HAS-A Menu
+  -> A Menu HAS-A list of MenuItem
+  -> A Customer HAS-A Cart
+  -> An Order HAS-A list of OrderItem
+  -> A Payment has multiple implementations (UPI, Card, Wallet) -> use Strategy Pattern
+  -> Order assignment:Order HAS-A DeliveryAgent (optional until assigned)
+
+=> Step 3: Apply Design Principles & Patterns
+  -> SOLID: 
+    -> SRP: OrderService handles order logic, PaymentService handles payment logic.
+    -> OCP: Add new payment methods without modifying existing code → Strategy.
+    -> DIP: Services depend on interfaces, not concrete classes.
+    -> Relevant Patterns:
+      -> Strategy → Payment
+      -> Observer → Notifications (SMS/Email/Push)
+      -> Factory Method → PaymentFactory
+      -> Singleton → Services like NotificationService, OrderIdGenerator
+      -> State Pattern → OrderState (optional, advanced)
+
+=> Class Diagram (textual version):
+
+1) USER MODULE
+    class User {
+        String userId;
+        String name;
+        String phone;
+        Location location;
+    }
+
+2) RESTAURANT MODULE
+    class Restaurant {
+        String restaurantId;
+        String name;
+        Location location;
+        Menu menu;
+        RestaurantStatus status;
+    }
+    
+    class Menu {
+        List<MenuItem> items;
+    }
+
+    class MenuItem {
+        String itemId;
+        String name;
+        double price;
+        boolean isAvailable;
+    }
+
+3)  CART MODULE
+    class Cart {
+        String cartId;
+        String customerId;
+        List<CartItem> items;
+    
+        void addItem(MenuItem item, int qty);
+        void removeItem(MenuItem item);
+        double getTotalPrice();
+    }
+
+    class CartItem {
+        MenuItem item;
+        int quantity;
+    }
+
+4) ORDER MODULE
+  -> Order Entity
+    class Order {
+        String orderId;
+        String customerId;
+        String restaurantId;
+        List<OrderItem> items;
+        OrderStatus status;
+        Payment payment;
+        DeliveryAgent assignedAgent;
+        Date createdTime;
+    }
+    
+    class OrderItem {
+        MenuItem item;
+        int quantity;
+        double price;
+    }
+  -> Order Service
+    class OrderService {
+    
+        Order createOrder(Cart cart) {
+            // Validate items
+            // Generate order
+            // Ask restaurant for confirmation
+            // Process payment
+            // Assign delivery agent
+        }
+    
+        void updateStatus(String orderId, OrderStatus status) {
+            // Publish notification
+        }
+    }
+  -> Order Status Enum
+    enum OrderStatus {
+        CREATED,
+        CONFIRMED,
+        PREPARING,
+        READY,
+        ASSIGNED_TO_AGENT,
+        PICKED_UP,
+        ON_THE_WAY,
+        DELIVERED,
+        CANCELLED
+    }
+
+5) PAYMENT MODULE (Strategy Pattern)
+  -> Payment interface
+    interface PaymentMethod {
+        boolean pay(double amount);
+    }
+
+  -> Payment Implementations
+    class UpiPayment implements PaymentMethod {
+        boolean pay(double amount) { return true; }
+    }
+    
+    class CardPayment implements PaymentMethod {
+        boolean pay(double amount) { return true; }
+    }
+    
+    class WalletPayment implements PaymentMethod {
+        boolean pay(double amount) { return true; }
+    }
+
+  -> Payment Factory
+    class PaymentFactory {
+        static PaymentMethod getPaymentMethod(PaymentType type) {
+            switch (type) {
+                case UPI: return new UpiPayment();
+                case CARD: return new CardPayment();
+                case WALLET: return new WalletPayment();
+            }
+            return null;
+        }
+    }
+6) DELIVERY MODULE
+  -> DeliveryAgent
+    class DeliveryAgent {
+        String agentId;
+        String name;
+        AgentStatus status;
+        Location location;
+    
+        void updateStatus(AgentStatus newStatus) { }
+    }
+
+  -> Agent Assignment Service
+    class DeliveryAgent {
+        String agentId;
+        String name;
+        AgentStatus status;
+        Location location;
+    
+        void updateStatus(AgentStatus newStatus) { }
+    }
+
+7) LOCATION MODULE
+    class Location {
+        double latitude;
+        double longitude;
+    }
+
+8) NOTIFICATION MODULE (Observer)
+
+    interface NotificationListener {
+        void onStatusUpdate(Order order);
+    }
+    class NotificationService implements NotificationListener {
+    
+        void onStatusUpdate(Order order) {
+            // send SMS/push/email
+        }
+    }
