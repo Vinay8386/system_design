@@ -1,0 +1,155 @@
+In this I am going to use complete SOLID principal using the code
+========================================================================================================================
+
+Question: “Design a Notification Sender that can send Email, SMS, and Push notifications.”
+
+========================================================================================================================
+Steps to be followed in this:
+
+Step 1: Start with Bad Design.
+step 2: Use Single Responsibility Principle (SRP)
+step 3: Use Open/Closed Principle (OCP)
+step 4: Use Liskov Substitution Principle (LSP)
+step 5: Use Interface Segregation Principle (ISP)
+step 6: Use Dependency Inversion Principle (DIP)
+========================================================================================================================
+Step 1: Start with Bad Design.
+
+    => NotificationService:
+        -> Problems:
+            Adding WhatsApp requires modifying this class → violates OCP
+            Class handles all logic → violates SRP
+            Type checking and branching → violates LSP
+            One fat interface → violates ISP
+            Depends on concrete logic → violates DIP
+
+    => now let’s fix everything one by one.
+
+step 2: Use Single Responsibility Principle (SRP)
+
+    Each class should have only one reason to change. We split logic into separate classes:
+
+    => EmailNotificationSender:
+    => SmsNotificationSender:
+    => PushNotificationSender:
+
+    Now NotificationService should no longer contain sending logic.
+    ✔ Improvement: NotificationService only coordinates. Actual sending logic is isolated
+
+step 3: Use Open/Closed Principle (OCP)
+
+    System should be open for extension but closed for modification. We create a common interface:
+    => Interface:
+        NotificationSender
+    => Implementations:
+        EmailSender
+        SmsSender
+        PushSender
+
+    Now the service NotificationService:
+        NotificationServiceWithOCP
+
+    Now if you want to extend for Whatsapp Notification, just create a class
+        WhatsappSender
+
+    No need to change NotificationService → OCP achieved!
+
+step 4: Use Liskov Substitution Principle (LSP)
+
+    Child classes must be usable in place of the parent without breaking the system.
+    Since:
+        NotificationSender sender = new EmailSender();
+        sender.send("Hi");
+    works exactly the same as:
+        NotificationSender sender = new SmsSender();
+        sender.send("Hi");
+
+    All subclasses behave like NotificationSender. We satisfied LSP because:
+        No method throws unexpected exceptions
+        No method violates expectations
+        No method changes method behavior signature
+
+step 5: Use Interface Segregation Principle (ISP)
+    Don't force clients to depend on methods they don’t use.
+    Let’s say push messages support: Title, Image and Action Button but sms can't support this.
+    If we do like this:
+        NotificationSender
+    ❌ SMS cannot implement all methods → violates ISP
+    ❌ Email cannot implement all methods
+
+    Let's fix it by splitting:
+        TextNotification
+        RichNotification
+
+    Now:
+        SMS implements only TextNotification
+        Email implements only TextNotification
+        Push implements both (because it supports rich content)
+
+step 6: Use Dependency Inversion Principle (DIP)
+    High-level modules should depend on abstractions, not concrete classes.
+
+    WRONG: NotificationServiceViolateDIP
+    CORRECT: NotificationServiceNotViolateDIP
+
+    Now:
+        NotificationService depends only on interface NotificationSender
+        Concrete classes plugged in from outside (DI/IOC)
+
+    This enables:
+        Testability
+        Flexibility
+        Clean architecture
+========================================================================================================================
+Final Design:
+
+interface NotificationSender {
+    void send(String message);
+}
+
+class EmailSender implements NotificationSender {
+    public void send(String msg) { /* email logic */ }
+}
+
+class SmsSender implements NotificationSender {
+    public void send(String msg) { /* sms logic */ }
+}
+
+class PushSender implements NotificationSender {
+    public void send(String msg) { /* push logic */ }
+}
+
+class NotificationService {
+    private final NotificationSender sender;
+
+    NotificationService(NotificationSender sender) {
+        this.sender = sender;
+    }
+
+    void send(String msg) {
+        sender.send(msg);
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
