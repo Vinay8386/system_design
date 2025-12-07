@@ -1,6 +1,6 @@
-package SOLID_Principal_using_Notification.DIP;
+package SOLID_Principal_using_Notification_System.DIP;
 
-import SOLID_Principal_using_Notification.OCP.NotificationSender;
+import SOLID_Principal_using_Notification_System.OCP.NotificationSender;
 
 public class NotificationServiceNotViolateDIP {
 

@@ -36,7 +36,7 @@ step 2: Use Single Responsibility Principle (SRP)
     Now NotificationService should no longer contain sending logic.
     ✔ Improvement: NotificationService only coordinates. Actual sending logic is isolated
 
-step 3: Use Open/Closed Principle (OCP)
+step 3: Use Open/Closed Principle (OCP) : Strategy + DIP is one of the BEST ways to achieve OCP but OCP is not literally the combination of Strategy + DIP.
 
     System should be open for extension but closed for modification. We create a common interface:
     => Interface:
@@ -53,6 +53,26 @@ step 3: Use Open/Closed Principle (OCP)
         WhatsappSender
 
     No need to change NotificationService → OCP achieved!
+
+    => In Real time how this will work:
+        Think of real-world analogy:
+            NotificationSender = A delivery person (the one who actually delivers the message)
+            NotificationServiceWithOCP = The manager who tells the delivery person what to deliver
+            So, service decide what message to send and sender decide how to send.
+            Two responsibilities → Two objects and This is exactly the goal of SRP (Single Responsibility Principle).
+
+        Why NotificationServiceWithOCP exists?
+            Because NotificationServiceWithOCP acts as one single point of trigger, regardless of the channel.
+            The service doesn’t know how message will be sent. It only knows what message to send. The sender decides the channel.
+
+        Why must we create BOTH objects?
+            ✔ Object 1 — The strategy (NotificationSender): This decides how to send (Email/SMS/Push). It encapsulates sending logic.
+            ✔ Object 2 — The service (NotificationService): This uses the strategy object to send the message. It encapsulates application flow logic. They work together.
+
+        In Real time, both objects work together
+            NotificationSender sender = new EmailSender();   // Strategy chosen  (You choose a channel (EmailSender))
+            NotificationService service = new NotificationService(sender);  // Inject strategy  (You give that channel to the service.)
+            service.send("Welcome!");     // Service uses sender    (Service sends message using the chosen channel)
 
 step 4: Use Liskov Substitution Principle (LSP)
 

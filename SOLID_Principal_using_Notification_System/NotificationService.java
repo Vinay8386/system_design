@@ -1,4 +1,4 @@
-package SOLID_Principal_using_Notification;
+package SOLID_Principal_using_Notification_System;
 
 public class NotificationService {
     void sendNotification(String type, String message){
