@@ -1,4 +1,4 @@
-package DesignPattern.BehavioralDesign.Strategy.PaymentStrategy;
+package DesignPattern.Behavioral_Design_Pattern.Strategy.PaymentStrategy;
 
 public class PayByPayPal implements PayStrategy{
 

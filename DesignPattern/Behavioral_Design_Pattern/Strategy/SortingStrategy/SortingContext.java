@@ -1,4 +1,4 @@
-package DesignPattern.BehavioralDesign.Strategy.SortingStrategy;
+package DesignPattern.Behavioral_Design_Pattern.Strategy.SortingStrategy;
 
 import java.util.List;
 

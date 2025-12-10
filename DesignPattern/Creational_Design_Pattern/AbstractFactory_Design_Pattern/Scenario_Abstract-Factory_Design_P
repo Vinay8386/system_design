@@ -1,0 +1,83 @@
+=> Scenario: Notification System
+    -> Why Abstract Factory?
+        -> The Factory Method pattern solves: "I want one product object, but client should not create it."
+        -> But Abstract Factory solves a bigger problem: "I want to create families of related objects together — without changing client code."
+
+    -> Let’s say your app supports different platforms:
+        -> ModernPlatform (supporting Email + Push)
+        -> LegacyPlatform (supporting SMS only)
+        -> EnterprisePlatform (supporting Email + SMS + Push)
+    -> In Factory design pattern we have direct object Email, Sms and Push but now we have 3 family(platform) or extend more in future which might support one or two or more object.
+    -> Client should only say:
+        NotificationFactory factory = new ModernNotificationFactory();
+        NotificationSender email = factory.createEmailSender();
+        NotificationSender push = factory.createPushSender();
+    -> So, Client doesn't know which concrete class exist and Adding a new family = Add new Factory class → No client changes.
+    -> This is exactly what Abstract Factory solves.
+    -> Implementation:
+        -> NotificationSender: Common abstraction for all types of notifications.
+        -> EmailSender: Concrete class
+        -> SmsSender: Concrete class
+        -> PushSender: Concrete class
+        -> NotificationFactory: Concrete factories decide which concrete sender to return.
+        -> ModernNotificationFactory: Modern systems prefer Email + Push (Concrete Factory 1)
+        -> LegacyNotificationFactory: Old systems may support only SMS (Concrete Factory 2)
+        -> FactoryProvider: decides which factory to return or we can say The "family selection" is now done in FactoryProvider, not client.
+        -> Client: Client code is closed for modification now
+
+    -> In Real time, you can load factory family from may ways like:
+        -> properties file (notification.properties)
+            Step 1 → Create config file and add "factory.mode=MODERN"
+            Step 2 → FactoryProvider reads from config
+            Step 3 → Client (NO hardcoding)
+        -> environment variable
+            Step 1 → Set environment variable
+            Step 2 → FactoryProvider reads env
+            Step 3 → Client stays same
+        -> Use Java Service Loader (plugin architecture)
+        -> Use dependency injection (Spring style)
+            Step 1 → Mark factories as Spring components
+                @Component("modernFactory")
+                public class ModernNotificationFactory implements NotificationFactory { ... }
+
+                @Component("legacyFactory")
+                public class LegacyNotificationFactory implements NotificationFactory { ... }
+
+            Step 2 → Select factory using @Profile or @Qualifier
+                Option A: Using Profiles
+                    application.properties: application.properties
+                    Modern version:
+                        @Component
+                        @Profile("modern")
+                        public class ModernNotificationFactory implements NotificationFactory { ... }
+                    Legacy version:
+                        @Component
+                        @Profile("legacy")
+                        public class LegacyNotificationFactory implements NotificationFactory { ... }
+            Step 3 → Client (Spring-managed)
+                @Component
+                public class NotificationClient {
+
+                    private final NotificationFactory factory;
+
+                    @Autowired
+                    public NotificationClient(NotificationFactory factory) {
+                        this.factory = factory;
+                    }
+
+                    public void run() {
+                        NotificationSender sender = factory.createPushSender();
+                        sender.send("Spring DI Version!");
+                    }
+                }
+            Step 4 → Main class
+                @SpringBootApplication
+                public class App {
+                    public static void main(String[] args) {
+                        ApplicationContext context = SpringApplication.run(App.class, args);
+                        context.getBean(NotificationClient.class).run();
+                    }
+                }
+            -> No client modification
+            -> Spring automatically injects correct factory
+            -> Best for real microservices

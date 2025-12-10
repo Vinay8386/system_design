@@ -1,4 +1,4 @@
-package DesignPattern.BehavioralDesign.Strategy.PaymentStrategy;
+package DesignPattern.Behavioral_Design_Pattern.Strategy.PaymentStrategy;
 
 public interface PayStrategy {
     boolean pay(double paymentAmount); //Method for payment logic

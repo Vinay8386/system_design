@@ -1,0 +1,56 @@
+=> Scenario: Notification System (Email, SMS, Push)
+    -> A system needs to send different types of notifications based on user preference.
+    -> You must create objects like: EmailNotification, SMSNotification, PushNotification. BUT you should not tightly couple your code to these classes.
+    -> In this scenario factory pattern will help.
+
+=> Stepwise details using old code and new code:
+    -> Step 1: Problem Without Factory
+    -> Step 2: Apply Factory Pattern
+    -> Step 3: Full Java Code
+
+
+=> Step 1: Problem Without Factory
+    -> Look into Scenario_SOLID_P step 3 client code:
+        public class Client {
+           public static void main(String[] args) {
+               NotificationSender sender = new EmailSender();   // Strategy chosen  (You choose a channel (EmailSender))
+               NotificationServiceWithOCP service = new NotificationServiceWithOCP(sender);  // Inject strategy  (You give that channel to the service.)
+               service.send("Welcome!");     // Service uses sender    (Service sends message using the chosen channel)
+           }
+        }
+    -> You inject (EmailSender, SMSSender, PushSender) through constructor.  NotificationServiceWithOCP depends on abstraction (NotificationSender). This is clean, testable, follows DI and OCP
+    -> Everything is correct, but client is still creating concrete class: "new EmailNotificationSender();" and Object creation is still tightly coupled to the client.
+    -> If tomorrow you add WhatsAppNotification : class WhatsAppSender implements NotificationSender { ... }
+       client must change sender = new WhatsAppSender(); // change required
+    -> This violates:
+        -> Open Closed Principle (because client must be modified)
+        -> Single Responsibility (client is deciding channels)
+        -> Dependency Inversion (client depends on concretions)
+    -> Even though service is perfectly designed, the client still breaks OCP. This is the MAIN reason Factory Pattern exists to remove this dependency from the client.
+    -> Factory moves this decision OUT of the client (Client → Factory → Correct Sender).
+    -> Implementation:
+        -> NotificationSender: Interface — contract for all senders.
+        -> EmailSender: Concrete strategies.
+        -> SmsSender: Concrete strategies.
+        -> PushSender: Concrete strategies.
+        -> NotificationFactory: Responsible for object creation based on input type.
+        -> NotificationService: Uses the sender through the interface.
+        -> Client: Only interacts with factory + service, never with concrete classes.
+        -> Now in future if I want to add whatsapp notification, I can create "WhatsappSender" and just do changes in NotificationFactory like below:
+                    return switch (notificationType.toUpperCase()){
+                        case "EMAIL" -> new EmailSender();
+                        case "SMS" -> new SmsSender();
+                        case "PUSH" -> new PushSender();
+                        case "WHATSAPP" -> new WhatsappSender();
+                        default -> throw new IllegalArgumentException("Unknown notification type: " + notificationType);
+                    };
+
+    -> Runtime Flow:
+        Client(wants to send notification)---> NotificationFactory[getSender("EMAIL")](decision making)--->EmailSender object(returned to client)-------------
+                                        -------------------------->NotificationService[has EmailSender inside](service.send())--->EmailSender.send()["Sending Email..."]
+        1. Client asks Factory for sender type.
+        2. Factory decides which sender to create.
+        3. Returns the correct NotificationSender implementation.
+        4. Client injects it into NotificationService.
+        5. Service calls send().
+        6. Correct sender executes runtime behaviour.

@@ -1,4 +1,4 @@
-package DesignPattern.BehavioralDesign.Strategy.PaymentStrategy;
+package DesignPattern.Behavioral_Design_Pattern.Strategy.PaymentStrategy;
 
 //want to process payment through credit card
 public class Client_1 {

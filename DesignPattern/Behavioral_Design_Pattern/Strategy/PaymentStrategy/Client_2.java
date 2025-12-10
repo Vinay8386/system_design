@@ -1,4 +1,4 @@
-package DesignPattern.BehavioralDesign.Strategy.PaymentStrategy;
+package DesignPattern.Behavioral_Design_Pattern.Strategy.PaymentStrategy;
 
 public class Client_2 {
     public static void main(String[] args) {

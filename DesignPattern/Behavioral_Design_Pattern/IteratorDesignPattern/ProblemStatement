@@ -1,0 +1,7 @@
+Context
+The Objectville Diner and Objectville Pancake House have menus. Each menu has multiple menu items, and each restaurant has its way of organizing its menu:
+
+The Objectville Pancake House menu is implemented as a list (e.g., ArrayList).
+The Objectville Diner menu is implemented as a map or array.
+
+Now, a new business requirement arises: "We want to print all the menus for both restaurants in a unified way, without knowing their internal structures."
