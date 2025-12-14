@@ -1,6 +1,14 @@
 => Creational design patterns:
-    -> Creational design patterns focus on the best ways to create objects, abstracting the instantiation process and helping to make a system independent of how its objects are created, composed, and represented.
-    -> The main types of creational design pattern
+    -> Creational Design Patterns focus on how objects are created. They abstract the instantiation process and help make a system:
+        -> Independent of how objects are created
+        -> Independent of which concrete classes are used
+        -> Easier to extend, test, and maintain
+        -> They mainly solve problem related to :
+            -> Tight coupling
+            -> Complex object creation
+            -> Object lifecycle management
+
+    -> Types of Creational Design Patterns
         -> Factory Design Pattern
         -> Abstract Factory Pattern
         -> Singleton Pattern
@@ -9,17 +17,38 @@
 
 ============================================================! Factory Design Pattern !===============================================================================
 
-=> Factory Pattern is needed mainly to remove object creation complexity, reduce tight coupling, and follow SOLID principles in large applications.
+=> Factory Pattern is needed mainly to
+    -> Remove object creation complexity
+    -> Reduce tight coupling between client and concrete classes
+    -> Centralize object creation logic
+    -> Follow SOLID principles, especially:
+        -> Open/Closed Principle (OCP)
+        -> Dependency Inversion Principle (DIP)
 
-=>
-
-
-
-
-
-
+=> When to Use Factory Pattern
+    -> When you need one product
+    -> When object creation varies based on input
+    -> When client should not know concrete classes
 
 ============================================================! Abstract Factory Pattern !===============================================================================
+=> Provide an interface for creating families of related or dependent objects without specifying their concrete classes.
+
+=> Why Abstract Factory is Needed
+    -> Factory Pattern creates one object.
+    -> But sometimes, systems need groups of related objects and in this case Abstract Factory is helpful.
+
+=> When to Use Abstract Factory
+   -> When objects must be used together
+   -> When you want to switch entire product families
+   -> When platform/environment matters
+
+=> Abstract Factory solves “Which group of objects should I create?”
+
 ============================================================! Singleton Pattern !===============================================================================
+=> Ensure a class has only one instance and provide a global access point to it.
+
 ============================================================! Builder Pattern !===============================================================================
+=> Separate the construction of a complex object from its representation so that the same construction process can create different representations.
+
 ============================================================! Prototype Pattern !===============================================================================
+=> Create new objects by copying an existing object instead of creating from scratch.

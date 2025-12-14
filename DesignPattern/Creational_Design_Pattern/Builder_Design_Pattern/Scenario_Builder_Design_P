@@ -1,0 +1,86 @@
+=> Definition: The Builder pattern separates the construction of a complex object from its representation so that the same construction process can create different representations.
+                It allows step-by-step object creation, avoids constructor explosion, and improves readability.
+=> Key Points:
+    -> Useful when object has many optional parameters.
+    -> Helps avoid telescoping constructor problem (constructor with too many parameters).
+    -> Promotes readable and maintainable code.
+    -> Often used with immutable objects.
+
+=> Why Builder is needed?
+    -> Large objects with many optional fields
+    -> Avoid multiple constructors (telescoping)
+    -> Improve code readability
+    -> Make object immutable
+    -> Control object construction step by step
+
+=> STRUCTURE OF BUILDER PATTERN
+    -> Notification:
+        -> private fields
+        -> private constructor
+        -> static nested class builder
+    -> Builder
+        -> method to set optional fields
+        -> build() method returns Notification object
+    -> Client
+        -> uses Builder to construct object
+
+=> Implementation:
+    -> Notification
+    -> Client
+
+=> Flow:
+    -> First: WHAT problem Builder solves (very important)
+        -> Imagine we have Notification class:
+            public class Notification {
+                private String to;
+                private String subject;
+                private String body;
+                private int priority;
+                private boolean isEncrypted;
+            }
+        -> Now the question is how will you create the object:
+        -> So, answer is by using constructor: new Notification(to, subject, body, priority, true);
+        -> Problem:
+            -> What is true?
+            -> Order matters/
+            -> Hard to read
+            -> Adding the new field will break the old code.
+        -> To solve all this we can use Builder design pattern.
+        -> Flow with Builder:
+            -> Client--->Builder(Collect data step by step)
+                     ---->build()
+                     ------>Final Notification object(immutable, ready)
+            -> Benefits: Client never directly set fields and Builder is like a temporary helper.
+            -> Client shouldn't call the constructor so make the constructor private and make fields private and final so it will be immutable.
+            -> Code flow:
+                -> Client will create object:
+                    -> new Notification.Builder("vinay@example.com", "System Alert")
+                    -> Client is NOT creating a Notification object here.
+                    -> Client is creating a Builder object only.
+                -> Builder object in memory holds: [to=alice@example.com, message=System Alert, subject=, cc=, bcc=, priority=0]
+                -> Notification object does not exist yet.
+                -> Method Chaining:
+                    .subject("Greetings")
+                    .bcc("testing@gmail.com")
+                    .cc("abc@gmail.com")
+                    .priority(10)
+                    .build();
+                -> Each method:
+                    -> Sets a field in Builder
+                    -> Returns the same Builder object (this)
+                -> Once you call build, notification object will be created and returned to Notification constructor.
+                -> Builder calls the private Notification constructor and Constructor returns a new Notification instance.
+                -> We can also say that build() creates a new Notification object by passing Builder data to the private constructor.
+                -> Client will never see Notification constructor because it is private and client can't misuse it.
+                -> Builder object still exists. Notification object is a separate new object and Builder is usually discarded.
+                -> Since all the fields is final in notification class so it will be immutable.
+                -> Why Builder is static?
+                    -> aS PER Java rule: "A non-static inner class needs an instance of the outer class to exist."
+                    -> If Builder was NOT static:
+                        Notification notification = new Notification(); // ❌
+                        Notification.Builder builder = notification.new Builder("a", "b");
+                    -> You just created a Notification object BEFORE Builder.
+                    -> But Builder’s whole purpose is: Create Notification, not depend on it. This breaks the design completely.
+                    -> Builder pattern philosophy: "Builder  →  creates  →  Notification"
+                    -> But non-static Builder forces: "Notification  →  creates  →  Builder"
+                    -> Static means: Builder does NOT need Notification instance and Builder exists before Notification exists

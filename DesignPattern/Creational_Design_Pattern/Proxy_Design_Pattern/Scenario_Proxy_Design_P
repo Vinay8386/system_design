@@ -1,0 +1,107 @@
+=> Proxy means "Instead of calling real object directly, you can call a substitute object(proxy) that controls access to the real object."
+   or you can think of proxy as "A class that looks exactly like the real object, but instead of doing the real work itself, it controls access to the real object.
+   You never call the real object directly. You can call proxy object and proxy decides:
+    -> Should I allow the call?
+    -> Should I block the call?
+    -> Should I modify the call?
+    -> Should I delay or optimise the call?
+    -> or should I create the real object when needed?
+=> why do we even need proxy?
+    -> Sometimes direct access of object is not safe, not efficient or not desirable.
+    -> A proxy let us attach exact behaviour before and after calling the real object-without modifying the real object.
+
+=> Important point: Proxy adds additional behaviour around the real object without changing the real object's code.
+    This is what make's proxy extremely powerful in real system.
+
+==================================================================================================================================================
+
+=> How Proxy Works (Simple Step-by-Step)
+    Step 1 — Define a common interface
+        -> Both RealObject and ProxyObject implement the same interface.
+    Step 2 — Client talks only to the Proxy
+        -> Client uses the proxy object.
+    Step 3 — Proxy controls/filters/optimizes calls
+        -> Proxy may:
+            -> Allow access
+            -> Deny access
+            -> Log the call
+            -> Create the real object lazily
+            -> Add performance monitoring
+            -> Add caching
+    Step 4 — Proxy forwards call to real object
+        -> Proxy forward rge call to real object
+
+=============================================================================================================================================================
+
+=> Use case: Proxy is:
+    -> Used when you want to control access:    Protection Proxy
+    -> Used for lazy initialization:            Virtual Proxy
+    -> Used to add extra behaviours:            Logging / Caching Proxy (Smart Proxy)
+
+=========================================================! Protection Proxy (Check permission before sending) !=========================================================
+=> User wants to send notification → Proxy checks permission → then calls real sender.
+=> It is used when you want to control access (Proxy = gatekeeper and Real Sender = actual worker). Example: Before sending a notification, we verify:
+    -> Is the user allowed to send this type of notification.
+    -> Is API key valid?
+    -> Does user have permissions?
+
+=> Implementation:
+    -> NotificationSender
+    -> RealNotificationSender
+    -> NotificationProxy
+    -> Client
+
+=========================================================! Virtual Proxy (Create heavy push sender lazily) !=========================================================
+=> PushSender creates heavy connection → We delay creation → Only create when first send is called.
+=> It is used for lazy initialization. Push notifications require a heavy connection setup (Expensive object).
+=> Instead of creating this heavy object always, we create a proxy, and it creates the real object only when needed.
+=> Proxies are great for performance optimization.
+
+==================================================! Logging/Caching Proxy (Add logs without modifying real class) !=========================================================
+=> It is used to add extra behaviour. Proxy adds this without modifying the real sender class.
+    -> Logging
+    -> Caching
+    -> Audit
+    -> Rate Limiting
+    -> Retry Logic
+    -> Error handling
+
+===============================================================================================================================================
+step 1: CLIENT REQUESTS SENDERS FROM FACTORY: Client say: "I am an ADMIN. Give me the notification senders I’m allowed to use."
+    -> List<NotificationSender> adminSenders = NotificationSenderFactory.createSenders("ADMIN");
+    -> Client doesn't know Email Sender, Sms Sender, Push Sender, Proxy Sender
+
+step 2: Factory now decides based on role "NotificationSenderFactory.createSenders("ADMIN")"
+    -> Factory Logic:
+        -> Creates EmailNotificationSender
+        -> Creates PushNotificationSender
+        -> Because role = ADMIN → also creates SmsNotificationSender
+        -> Wraps each real sender inside a Proxy
+        -> Returns a List of Proxies
+    -> Factory returns: [Proxy(Email), Proxy(Push), Proxy(SMS)] not raw object.
+
+step 3: CLIENT RECEIVES ONLY INTERFACE REFERENCES
+    -> Client receives List<NotificationSender> and still doesn't know which concrete class, whether proxy exists and which check happens.
+
+step 4: CLIENT SENDS MESSAGE (ADMIN)
+    -> adminSenders.forEach(sender -> sender.send("Admin notification"));
+
+step 5: PROXY INTERCEPTS THE CALL
+    -> For each sender: sender.send() is called and JVM resolves it to: : "NotificationProxy.send()"
+    -> Client thinks it is calling: “NotificationSender” but reality is: “Proxy is handling it first”
+
+step 6: PROXY CHECKS PERMISSION
+    -> Inside NotificationProxy.send():
+    -> For ADMIN:
+        -> Role = ADMIN
+        -> Check passes
+    -> Proxy decides: “Allowed. Forward to real sender.”
+
+Step 7: PROXY DELEGATES TO REAL SENDER
+    -> realSender.send(msg); Now execution moves to: EmailNotificationSender OR PushNotificationSender OR SmsNotificationSender
+
+step 8: REAL SENDER DOES ACTUAL WORK
+step 9: SAME FLOW FOR USER ROLE
+step 10: USER TRIES TO SEND
+
+
