@@ -1,3 +1,5 @@
+=> This is type of structural design pattern not creational design pattern.
+
 => Proxy means "Instead of calling real object directly, you can call a substitute object(proxy) that controls access to the real object."
    or you can think of proxy as "A class that looks exactly like the real object, but instead of doing the real work itself, it controls access to the real object.
    You never call the real object directly. You can call proxy object and proxy decides:

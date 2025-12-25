@@ -1,0 +1,15 @@
+=> This is also explained in Creational Design Pattern in Notification system example but it is a type of Structural Design Pattern.
+
+=> Problem in Our Food Delivery Scenario: Checking delivery status is an expensive operation requires calling external delivery system but we want Authentication check, Logging, Lazy initialization.
+    -> Without Proxy:
+        DeliveryService deliveryService = new RealDeliveryService();
+        deliveryService.trackOrder("ORD123");
+    -> Problem: No security, always hit real service and no control layer.
+
+=> Applying Proxy Pattern (Step by Step)
+    -> Step 1️⃣ Common Interface (Subject): DeliveryService
+    -> Step 2️⃣ Real Subject (Actual Implementation): RealDeliveryService
+    -> Step 3️⃣ Proxy Class (Core of Pattern): DeliveryServiceProxy
+    -> Client Code (Very Important): OrderClient
+
+=> Detailed notes about proxy design pattern is mentioned inside Creational_Design_Pattern package.

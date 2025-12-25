@@ -1,0 +1,27 @@
+=> Definition: In the Composite pattern, there are two types of elements: Composite objects and Leaf objects.
+               Both are treated uniformly through a common interface, so the client does not need to distinguish between a single object and a group of objects.
+               Whether it is one object (Leaf) or many objects together (Composite),the client code uses them in the same way.
+               Composite Pattern lets you treat individual objects and a group of objects in the same way.
+
+=> Key Idea: Client should not care whether it is dealing with: a single object (Leaf) or a collection of objects (Composite)
+
+=> Problem in Our Food Delivery Scenario: A user can order: single food item (Pizza) or Combo Meal (Pizza + Burger + Drink)
+    -> Without Composite:
+        if (item instanceof Pizza) {
+            total += pizza.getCost();
+        } else if (item instanceof ComboMeal) {
+            for (FoodItem item : combo.getItems()) {
+                total += item.getCost();
+            }
+        }
+    -> Problem: instanceof checks, Tight coupling, Violates Open–Closed Principle
+
+=> Applying Composite Pattern (Step by Step):
+    -> Step 1️⃣ Component Interface: FoodItem
+    -> Step 2️⃣ Leaf Objects (Single Items): Pizza, Burger
+    -> Step 3️⃣ Composite Object (Group of Items): ComboMeal
+    -> Client Code (Uniform Treatment ⭐): OrderClient
+    -> To optimize client code completely, create:
+        -> FoodFactory: Client changes only here if menu changes
+        -> OrderFacade: Client simplicity
+

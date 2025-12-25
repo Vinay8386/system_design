@@ -1,0 +1,52 @@
+=> Definition: It is a way to combine or arrange different classes and objects to form a complex or bigger structure to solve a particular requirements.
+
+=> They help answer questions like:
+    -> How do I connect objects without making the system rigid?
+    -> How do I extend behaviour without modifying existing code?
+    -> How do I hide complexity from the client?
+
+=> Key Goals:
+    -> Reduce tight coupling
+    -> Promote composition over inheritance
+    -> Make system easier to scale and modify
+
+=> Types of Structural Design Pattern:
+    -> Decorator Design Pattern
+    -> Facade Design Pattern
+    -> Adapter Design Pattern
+    -> Proxy Design Pattern
+    -> Composite Design Pattern
+    -> Bridge Design Pattern
+    -> Flyweight Design Pattern
+
+=> Scenario: Online Food Delivery System (like Swiggy / Zomato)
+    -> Initial requirements:
+        -> User places a food order
+        -> System calculates price
+        -> Optional add-ons (extra cheese, toppings, packaging)
+        -> Payment processing
+        -> Delivery tracking
+        -> Notifications
+    -> Initial Thought Process (Beginner / No Pattern)
+        -> One big class
+        -> Too many if-else
+        -> Tight coupling
+        -> Hard to extend
+
+    -> Code WITHOUT Any Design Pattern (Problematic Design)
+        -> FoodOrderServiceProblematicImplementation: This code
+            -> Violates Open–Closed Principle
+            -> Adding a new food item → modify existing code
+            -> Adding a new add-on → more if-else
+            -> Hard to test
+            -> Hard to extend
+            -> God class problem
+
+    -> Use structural design pattern to evolve this issue:
+        -> Adapter: Integrating third party payment gateway
+        -> Decorator: Adding toppings, add-on dynamically
+        -> Facade: Simplifying order placements for client
+        -> Proxy: Delivery tracking, security and caching
+        -> Composite: Combo meals(meals = multiple item)
+        -> Bridge: Separating payment method for order
+        -> Flyweight: Reusing common food item objects

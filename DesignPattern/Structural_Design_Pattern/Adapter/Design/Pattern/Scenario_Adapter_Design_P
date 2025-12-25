@@ -1,0 +1,54 @@
+=> Use case: Your system expects PaymentService and third part gateway(Paytm / Razorpay / Stripe) has a different interface. you can't modify third party code. So, Adapter bridges the gap.
+
+=> Definition: Adapter pattern is used when we want to integrate a third-party or legacy system whose interface does not match our system. Example:
+               -> In our food delivery system, we designed this:
+                  public interface PaymentService {
+                      void makePayment(double amount);
+                  }
+                  Our system (Facade / Client) knows only this:
+                  paymentService.makePayment(500);
+
+               -> Now imagine a third-party payment gateway (Paytm / Razorpay):
+                  public class RazorPayGateway {
+
+                      public void payAmount(int rupees) {
+                          System.out.println("Paid via RazorPay: ₹" + rupees);
+                      }
+                  }
+               -> Both party have different method signature so mismatch happened. Similarly our system is Interface-based but third-part system is concrete class.
+               -> So third-party or legacy system interface does not match our system.
+               -> If we modify our system like below to fix this issue than it will be tight coupling, violate OCP, and also hard to switch gateway.
+                  public class OrderFacade {
+
+                      public void placeOrder(double amount) {
+                          RazorPayGateway gateway = new RazorPayGateway();
+                          gateway.payAmount((int) amount);
+                      }
+                  }
+               -> So to fix this issue we can use Adapter Design pattern
+               -> In place of fixing the issue by doing code change, Adapter will translates one interface into another and integration will work.
+
+=> Implementation:
+       -> Target Interface : PaymentService
+       -> Adaptee (Third-Party / External System): RazorPayGateway
+       -> Adapter: RazorPayAdapter (implements PaymentService)
+            -> Internally delegates to RazorPayGateway
+       -> Optional Creation Abstraction: PaymentFactory
+            -> Responsible for providing appropriate PaymentService implementation
+       -> Facade (Uses Target Interface Only): OrderFacade
+           -> Interacts with PaymentService without knowing the concrete gateway
+       -> Client: OrderClient
+
+=> Conceptual Flow: OrderClient → uses OrderFacade → which depends on PaymentService → implemented by RazorPayAdapter → which internally calls RazorPayGateway.
+
+=> Interview Question:
+    -> How do you integrate a third-party service?
+        -> I integrate a third-party service using the Adapter Design Pattern by creating an adapter that converts my system’s expected interface into the interface provided by the external service.
+            -> First, I define a target interface that my system understands.
+            -> Then I create an adapter class that implements this interface and internally calls the third-party API, translating method names, parameters, and return types as required.
+            -> This way, the rest of the system remains decoupled from the third-party service and can switch providers easily.
+
+    -> Difference between Adapter and Facade?
+        -> Adapter is used for integrating external systems with incompatible interfaces, while Facade is used to simplify interaction with a complex internal system.”
+            -> Adapter Converting RazorPay’s payAmount() to makePayment()
+            -> Facade One placeOrder() method hiding payment, delivery, and notification logic

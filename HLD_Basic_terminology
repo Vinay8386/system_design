@@ -1,0 +1,674 @@
+=> Scaling: Scaling is the ability of a system to handle increased load (users, requests, data, traffic) without degradation in performance.
+    -> Load can increase due to:
+        -> More concurrent users
+        -> More API requests per second
+        -> More data to store and process
+    -> Why scaling is required?
+        -> If a system does not scale:
+            -> Response time increases
+            -> Requests fail
+            -> System crashes
+            -> Poor user experience
+        -> Hence, scaling is a core responsibility of system architecture.
+    -> Types of Scaling: There are two primary types of scaling
+        -> Vertical Scaling(Scale Up): Vertical scaling means increasing the capacity of a single machine by adding more resources such as:
+            -> CPU
+            -> RAM
+            -> Disk
+            -> Network Bandwidth
+           The application still runs on one server, but that server becomes more powerful.
+           Example: Upgrade a server from 8 GB RAM → 32 GB RAM, Upgrade CPU from 4 cores → 16 cores, Upgrade DB instance size in cloud
+           Advantages:
+                -> Simple to implement
+                -> No changes required in application logic
+                -> Suitable for small systems
+           Disadvantages
+                -> Hardware limit exists
+                -> Very expensive at higher scale
+                -> Single Point of Failure
+                -> Downtime required during upgrades
+           When Vertical Scaling is Used?
+                -> Initial phase of application
+                -> Legacy systems
+                -> Applications with low traffic
+
+        -> Horizontal Scaling(Scale Out): Horizontal scaling means adding more machines to the system and distributing load among them. Each machine runs an instance of the same application.
+            -> Example: Instead of 1 Server handling 100,000 users we use 5 Servers handling 20,000 users each
+            -> Advantage:
+                -> No hardware upper limit
+                -> High availability
+                -> Fault tolerance
+                -> Industry standard approach
+            -> Disadvantages:
+                -> Requires load balancer
+                -> Requires stateless services
+                -> Distributed system complexity
+            -> Important Architectural Rule: Horizontal scaling works only when services are stateless.
+
+=> Stateful vs Stateless Application:
+    -> Stateful(What NOT to do in HLD): A stateful application stores client-specific state (such as session data) inside the application server’s memory.
+                 Flow:
+                    Client------>Load Balancer------->[Server 1 (Session), Server 2, server 3]
+                 As a result, the state becomes tightly coupled to a specific server instance.
+                 Because the state resides in server memory, sticky sessions (Sticky sessions are used in stateful systems to ensure requests from the same client always reach the server that holds the session state) are required.
+                 In a stateful setup, when a user logs in:
+                    -> The load balancer routes the initial request to Server-1
+                    -> A user session is created and stored in Server-1’s memory
+                    -> The load balancer then remembers this mapping and ensures that all subsequent requests from the same client are always routed to Server-1
+                 This behavior introduces several problems:
+                    -> All requests from that user are forced to a single server, leading to uneven load distribution
+                    -> Other servers remain underutilized while one server becomes overloaded
+                    -> Adding more servers does not effectively distribute traffic, causing horizontal scaling to fail
+                    -> As traffic increases, the overloaded server may experience performance degradation
+                    -> Eventually, the server may crash, resulting in session loss and service disruption
+                 -> Therefore, stateful applications do not scale well horizontally and are prone to reliability and availability issues at scale.
+
+    -> Stateless(Correct HLD Approach): A stateless application does not store client-specific state in its own memory.
+                Flow:
+                    Client------>Load Balancer------>[App Server 1, App Server 2, App Server 3, App Server 4]------>[| Redis | Database | Message Queue | Object Store |]
+
+                Important observation: State lives below the app servers(external store), not inside them.
+                Each request contains all required information OR reference (token, key) to fetch state from an external store
+                Benefits of state availability in (external store):
+                    -> State is shared
+                    -> Same session can be accessed by any server
+                    -> Requests are independent, but state is persistent
+                Important point: Stateless does NOT mean “no state”, it means means “state is not stored in the application server”
+                Why This Enables Horizontal Scaling?
+                    -> Because Any request can go to any server
+                    -> No dependency on server memory
+                    -> Servers can be added/removed freely
+                Where Is the State Stored in a Stateless System?
+                    -> In real-world systems, state is stored in external shared systems. There are four primary categories.
+                        -> Database (Persistent(survives restarts and crashes) State): A database stores state in a persistent and durable manner, serving as the source of truth for business data.
+                            -> What Kind of State?
+                                -> User profiles
+                                -> Orders, transactions
+                                -> Products, inventory
+                                -> Permanent business entities
+                            -> Real-World Example:
+                                -> User details in MySQL or PostgreSQL
+                                -> Orders stored in MongoDB
+                            -> Use Case: Business-critical information that must not be lost
+                        -> Distributed Cache (Session / Fast State): A distributed cache is a high-speed, in-memory storage used to store temporary or frequently accessed state.
+                            -> What Kind of State?
+                                -> User sessions (e.g., login)
+                                -> Temporary shopping carts
+                                -> Frequently accessed configuration or product data
+                            -> Real-World Example:
+                                -> Redis for session storage: sessionId → userDetails
+                                -> Memcached for caching frequently read product catalog
+                            -> Use Case:
+                                -> Avoid database hits for repeated reads
+                                -> Maintain fast, shared state across multiple servers
+                        -> Client Side (Token-Based State): In token-based approaches, the client itself stores state or references to state, which is sent back with every request.
+                            -> What Kind of State?
+                                -> User identity
+                                -> Roles and permissions
+                                -> Expiry information
+                            -> Characteristics:
+                                -> Stored on client (browser, mobile app)
+                                -> Stateless on server (server just validates token)
+                                -> Lightweight; reduces server memory usage
+                            -> Real-World Example:
+                                -> JWT (JSON Web Token) containing user ID and role
+                                -> Encrypted cookies for session references
+                            -> Use Case:
+                                -> Authentication and authorization
+                                -> Reducing server-side session storage
+                        -> Message Brokers / Streams (Transient State): Message brokers handle transient or event-driven state, enabling asynchronous communication between services.
+                            -> What Kind of State?
+                                -> Workflow progress
+                                -> Event states (order processing, notifications)
+                                -> Temporary task queues
+                            -> Characteristics:
+                                -> Not permanent; transient or time-bound
+                                -> Supports decoupled and distributed architectures
+                                -> Enables fault tolerance and retries
+                            -> Real-World Example:
+                                -> Kafka topics storing order events
+                                -> RabbitMQ queues for async notifications
+                            -> Use Case:
+                                -> Asynchronous workflows
+                                -> Event-driven architectures
+                                -> Systems requiring temporary state or retry mechanisms
+
+=> Load Balancer: A Load Balancer is a component that sits between clients and application servers and distributes incoming requests across multiple server instances to improve scalability, availability, and reliability.
+    -> Why Do We Need a Load Balancer?
+        -> Without a load balancer:
+            -> One server handles all traffic
+            -> Performance degrades quickly
+            -> Server crash brings down the entire system
+        -> With a load balancer:
+            -> Traffic is shared
+            -> No single server is overloaded
+            -> System remains available even if one server fails
+        -> Flow Architecture:
+            Client--------------->Load Balancer--------------->(App Server 1, App Server 2, App Server 3)
+        -> Responsibilities of a Load Balancer: A load balancer is not just a traffic router. It performs multiple responsibilities:
+            -> Traffic distribution
+            -> Health checking
+            -> Fault tolerance
+            -> Scalability support
+            -> SSL termination (in many systems)
+        -> Type of Load Balancer:
+            -> Based on layer:
+                -> Layer 4 (Transport Layer) – TCP/UDP
+                    -> Layer 4 load balancers route traffic based on IP and port without inspecting application data.
+                    -> A Layer 4 Load Balancer operates at the transport layer and makes routing decisions based on:
+                        -> Source IP address
+                        -> Destination IP address
+                        -> Source port
+                        -> Destination port
+                        -> Protocol (TCP / UDP)
+                    -> It does not inspect the application-level data (such as HTTP headers or URLs).
+                    -> How Layer 4 Load Balancer Works
+                        -> Client sends a TCP/UDP request
+                        -> Load balancer checks IP + port
+                        -> Request is forwarded to a backend server
+                        -> Load balancer does not understand HTTP
+                    -> Advantages
+                        -> Extremely high performance
+                        -> Low latency
+                        -> Suitable for non-HTTP traffic
+                    -> Disadvantages
+                        -> Cannot route based on URL, headers, or cookies
+                        -> Cannot do SSL termination at application level
+                        -> Limited flexibility
+                    -> Real-World Use Cases
+                        -> TCP-based services
+                        -> Databases
+                        -> Game servers
+                        -> High-throughput systems
+                    -> Example
+                        -> AWS Network Load Balancer (NLB)
+                        -> HAProxy (TCP mode)
+
+                -> Layer 7 (Application Layer) – HTTP/HTTPS (In HLD discussions, we mostly refer to Layer 7 load balancers.)
+                    -> Layer 7 load balancers understand application protocols and route traffic based on request content like URLs and headers.
+                    -> A Layer 7 Load Balancer operates at the application layer and makes routing decisions based on:
+                        -> URL path
+                        -> HTTP headers
+                        -> Cookies
+                        -> Hostname
+                        -> Request method (GET, POST)
+                    -> It understands the application protocol (HTTP/HTTPS).
+                    -> How Layer 7 Load Balancer Works
+                        -> Client sends HTTP/HTTPS request
+                        -> Load balancer parses request content
+                        -> Applies routing rules
+                        -> Forwards request to appropriate backend service
+                    -> Advantages
+                        -> Intelligent routing
+                        -> Path-based routing
+                        -> Header-based routing
+                        -> Supports microservices
+                        -> SSL termination
+                        -> Supports authentication, rate limiting
+                    -> Disadvantages
+                        -> Slightly higher latency
+                        -> More resource-intensive
+                        -> More complex configuration
+                    -> Real-World Use Cases
+                        -> REST APIs
+                        -> Microservices
+                        -> Web applications
+                        -> API gateways
+                    -> Examples
+                        -> AWS Application Load Balancer (ALB)
+                        -> NGINX
+                        -> Envoy
+                        -> API Gateway
+                -> Architect’s Rule of Thumb
+                    -> Use Layer 4 LB when you need maximum performance and simple routing
+                    -> Use Layer 7 LB when you need intelligent routing and microservices support
+        -> Load Balancing Algorithms
+            -> Round Robin Algorithm: Round Robin distributes requests sequentially to each server in order.
+                -> If we have three server (server1, server2, server3)
+                -> Request are sent like:
+                    -> Request 1 → Server 1
+                    -> Request 2 → Server 2
+                    -> Request 3 → Server 3
+                    -> Request 4 → Server 1
+                -> Advantages:
+                    -> Easy to implement
+                    -> Works well when servers are identical
+                    -> Good for stateless applications
+                -> Disadvantages
+                    -> Does not consider server load
+                    -> Slow server still gets equal traffic
+                -> When to Use
+                    -> Stateless services
+                    -> Same server configuration
+                    -> Short-lived requests
+
+            -> Least Connection Algorithm: Least Connections routes traffic to the server that currently has the fewest active connections.
+                -> How It Works
+                    -> Load balancer tracks active connections per server
+                    -> New request goes to the server with minimum load
+                    -> Example:
+                        Server 1 → 100 connections
+                        Server 2 → 20 connections
+                        Server 3 → 40 connections
+                    -> New request will go to Server 2 because they have minimum load.
+                    -> Advantages:
+                       -> Better load distribution
+                       -> Ideal for long-running requests
+                    -> Disadvantages
+                       -> Slightly more complex
+                       -> Requires tracking active connections
+                    -> When to Use
+                       -> Streaming services
+                       -> File uploads/downloads
+                       -> APIs with variable response time
+
+            -> Weighted Round Robin: Weighted Round Robin assigns a weight to each server based on its capacity.
+                -> How It Works
+                    -> Example:
+                        Server 1 (Weight = 3)
+                        Server 2 (Weight = 1)
+                    -> Traffic distribution:
+                        Server 1 → 3 requests
+                        Server 2 → 1 request
+                -> Advantages:
+                    -> Supports mixed hardware
+                    -> Useful during migrations
+                -> Disadvantages
+                    -> Manual weight tuning required
+                    -> Not fully dynamic
+                -> When to Use
+                    -> Servers with different CPU/RAM
+                    -> Canary deployments
+                    -> Gradual traffic rollout
+
+    -> Health Checks: Load balancers continuously check server health. If a server stop responding and return errors, Load balancer remove it from rotation automatically. This ensures high availability.
+
+    -> Load Balancer and Stateless Systems:
+        -> In stateless systems:
+            -> Any request can go to any server
+            -> Sticky sessions are not required
+            -> Load balancer works efficiently
+        -> In stateful systems:
+            -> Sticky sessions are required
+            -> Load distribution becomes uneven
+
+=> TCP & UDP
+    -> TCP(Transmission Control Protocol): TCP is a connection-oriented and reliable protocol. This means:
+        -> A connection is established before data transfer
+        -> Data delivery is guaranteed
+        -> Order of packets is maintained
+        -> How TCP Works (Conceptual)
+            -> Connection setup (3-way handshake)
+            -> Data transfer
+            -> Connection termination
+        -> Examples of TCP-based Applications
+            -> HTTP / HTTPS
+            -> Databases (MySQL, PostgreSQL)
+            -> File transfer
+            -> APIs
+        -> Why TCP at Layer-4 Load Balancer?
+            -> A Layer-4 LB:
+                -> Sees TCP connections
+                -> Routes based on:
+                    -> Source IP
+                    -> Destination IP
+                    -> Source port
+                    -> Destination port
+                -> It does not inspect HTTP content, only manages connections.
+    -> UDP(User Datagram Protocol)
+        -> UDP is a connectionless and unreliable protocol. This means:
+            -> No connection setup
+            -> No delivery guarantee
+            -> No packet ordering
+        -> How UDP Works
+            -> Data is sent directly
+            -> No handshake
+            -> No acknowledgement
+        -> Examples of UDP-based Applications
+            -> Video streaming
+            -> Online gaming
+            -> VoIP calls
+            -> DNS queries
+
+
+=> DNS(Domain Name Server): DNS (Domain Name System) is a distributed naming system that translates human-readable domain names into machine-readable IP addresses.
+                            For Example: DNS converts a domain name like google.com into an IP address like 142.250.x.x.
+                            Computers communicate using IP addresses, not domain names.
+                                -> Humans prefer names → amazon.com
+                                -> Machines need numbers → 205.251.xxx.xxx
+                            DNS acts as a translator between the two.
+                            DNS is not a Single server. It is globally distributed, hierarchical and highly available.
+                            This design avoid single point of failure, bottleneck and central dependency.
+    -> DNS Hierarchy: DNS follows a hierarchical structure.
+            Root Domain (.)-------->Top Level Domain (TLD)----------->Second Level Domain------------------>Subdomain
+            Example:
+                -> google.com:
+                    -> Root domain: (.)
+                    -> Top Level domain: .com
+                    -> Second level domain: google
+                    -> Subdomain: skipped here
+                -> www.example.in
+                    -> Root domain: (.)
+                    -> Top Level Domain: .in
+                    -> Second Level Domain: .example
+                    -> Subdomain: www
+
+        -> Root Domain (.): The root domain is the top-most level of DNS hierarchy. It will be represented by a dot . (usually hidden). It knows where TLD server are located.
+            -> For Example: When you write "www.google.com", DNS internally sees it as: "www.google.com.", That final dot represents the Root Domain.
+
+        -> TLD (Top-Level Domain): A TLD represents the domain extension.
+            -> For Example: .com, .org, .in, .net
+            -> Responsibilities: Redirects requests to the Authoritative Name Server(ANS) of the domain
+
+        -> Second Level Domain: A Second Level Domain (SLD) is the main registered name of a website under a TLD.
+            -> This is the name you buy/register from a domain registrar
+            -> It represents your organization, company, or brand
+            -> All DNS control starts from here
+            -> It is called second level because it is only level below the top level domain.
+            -> Example: "example.com" .com → Top Level and example → Second Level
+
+        -> Subdomain: A subdomain is a domain that is part of a larger domain.
+            -> Is Subdomain is optional ?
+               -> Yes, a subdomain is optional. You do not need a subdomain to have a functioning website or email.
+               -> If you choose not to use one, your website will sit on what is called the Apex Domain (also known as the "Root" or "Naked" domain).
+               -> The most famous subdomain is www.
+               -> Earlier It was almost mandatory because servers were less flexible. But today's it is completely optional.
+               -> Many modern websites (like github.com) let you skip it. You can set up your DNS so that both www.example.com and example.com lead to the same place.
+               -> In some scenario it is mandatory to have subdomain like:
+                  -> Internal Organization: If you want to host a blog (blog.site.com) on a different server than your main shop (site.com), you must use a subdomain (or a subdirectory) to tell the internet where to go
+                  -> Corporate Identification: In the email you received from Daimler, the ANS acts like a mandatory subdomain in their private network. Without it, the computer wouldn't know which "department" or "security zone" to look in for your account.
+                  -> Localization: If you have separate versions of a site for different countries (e.g., uk.site.com and in.site.com), the subdomain is the tool that makes that separation possible
+
+    -> Authoritative(Final + Trusted Source) Name Server(ANS): The Authoritative Name Server is a kind of service register but not the modern Service Registry. there are two key nuances that distinguish an Authoritative Name Server (ANS) from a modern Service Registry.
+       -> Why it is similar to service registry:
+          -> ANS acts as a distributed key-value store where:
+              -> Key: Domain Name (e.g., api.example.com)
+              -> Value: Resource Record (e.g., IP Address 192.0.2.1)
+             When you ask the ANS for a "Key," it gives you the "Value" it has stored in its Zone File.
+       -> Why it’s NOT exactly a "Service Registry"
+          -> In modern software architecture (like Microservices or Kubernetes), a Service Registry (like Consul, Eureka, or etcd) does more than just hold names and IPs. Here is how an ANS differs:
+             -> Static vs. Dynamic (The Update Speed):
+                -> ANS: Historically designed for static records. When you change an IP in an ANS, it can take minutes or hours to "propagate" across the internet because of TTL (Time to Live) caching.
+                -> Service Registry: Designed for high-speed dynamics. If a microservice container dies and a new one starts with a different IP, the registry updates in milliseconds.
+
+             -> Health Awareness:
+                -> ANS: Usually "dumb." It will give you an IP address even if the server at that IP is currently crashed or on fire.
+                -> Service Registry: Includes Health Checking. It actively pings the service. If the service is down, the registry automatically removes it from the "Value" list so no one tries to connect to a dead server.
+
+             -> Metadata:
+                -> ANS: Stores limited types of data (A records for IPs, MX for mail, TXT for text).
+                -> Service Registry: Can store rich metadata (e.g., "This is version 2.0 of the app," "This instance is in the 'East' region," or "This node has low CPU usage").
+
+    -> TTL(Time to Live) Cache: TTL Cache is essentially an "expiration date" attached to data stored in a cache. It tells the system exactly how many seconds to keep a piece of information before throwing it away and fetching a fresh copy from the source.
+       -> How it Works (The Lifecycle)
+          -> You ask for a piece of data (like the IP address for google.com).
+          -> Your computer asks an Authoritative Name Server. The server gives the IP address plus a TTL value (e.g., 3600 seconds).
+          -> Your computer saves that IP address in its local "TTL Cache" and starts a countdown timer from 3600.
+          -> For the next hour, every time you visit Google, your computer pulls the IP from the cache instantly without asking the server again.
+          -> Once the timer hits zero, the record is considered "stale." The next time you visit, your computer deletes the old data and starts over at Step 1.
+          -> Long TTL(e.g., 24 hours)
+             -> Pros: High Performance: Very fast for users because data stays in the cache longer. Lowers the load on your servers.
+             -> Cons: Slow Updates: If you change your server's IP, users will be "stuck" seeing the old one until the 24-hour timer expires.
+          -> Short TTL(e.g., 60 seconds)
+             -> High Agility: Changes propagate across the internet almost instantly. Great for emergency fixes or "Failover" systems.
+             -> Higher Latency: Every user has to ask the server for the "truth" more often, which slows down the initial connection.
+
+    -> ISP(Internet Service Provider): An ISP (Internet Service Provider) is a company that provides you access to the Internet. Without ISP, your device can't reach website and also DNS resolution can't even start.
+        -> Real-Life Examples of ISPs in india: Jio, Airtel, BSNL..etc. Globally: Comcast, AT&T, Verizon
+        -> An ISP provides multiple services, not just internet:
+            -> Connects your device to the global internet
+            -> Assigns a public/private IP to your device
+            -> Performs DNS lookup on your behalf (DNS Resolver)
+            -> Routes packets to destination servers
+            -> Caches DNS responses for faster access
+            -> Firewall, filtering, monitoring
+        -> ISP DNS Resolver:
+            -> An ISP DNS Resolver is a recursive DNS server that:
+                -> Takes responsibility of finding the IP address
+                -> Talks to Root → TLD → Authoritative servers
+                -> Returns final IP to your device
+                -> Important point: Your device never directly talks to Root or TLD servers.
+            -> Can We Bypass ISP DNS?
+                -> Yes You can configure custom DNS: Google DNS → 8.8.8.8, Cloudflare DNS → 1.1.1.1
+                -> Even then, these are are still recursive resolvers. They behave just like ISP DNS.
+
+    -> DNS Resolution Flow (End-to-End, Step-by-Step):
+        -> User Enters Domain in Browser
+           -> When a user types "www.yahoo.com" in the web browser, the DNS resolution process starts.
+        -> Browser Cache Check
+            -> The browser first checks its own cache to see if it already has the IP address for www.yahoo.com.
+                -> If IP is found → DNS resolution stops here
+                -> If IP is not found → request moves forward
+        -> OS Cache Check
+            -> If the browser cache does not contain the IP address, the request is forwarded to the Operating System DNS cache.
+                -> If IP is found → return IP to browser
+                -> If IP is not found → continue
+        -> Request Sent to Resolver (ISP DNS Server)
+            -> If the IP is not available in OS cache, the system sends the DNS query to the DNS Resolver, which is usually provided by the ISP (Internet Service Provider).
+            -> This resolver is also called a Recursive DNS Resolver.
+        -> Resolver Cache Check
+            -> The resolver first checks its own cache memory:
+                -> If IP exists → return IP immediately
+                -> If IP does not exist → resolver starts recursive resolution
+        -> Resolver Queries Root Server
+            -> The resolver sends the query to the Root Server.
+            -> Important:
+                -> Root servers are placed strategically around the world
+                -> They are managed by multiple organizations
+                -> Root servers do not know IP addresses of domains
+            -> Root Server Response: "I don’t know the IP address of www.yahoo.com, but I know which TLD server manages .com domains"
+                -> The root server responds with the address of the .com TLD server.
+            -> Resolver Queries TLD Server (.com)
+                -> The resolver now sends the query to the Top-Level Domain (TLD) server for .com.
+                -> TLD Server Role:
+                    -> TLD servers store which authoritative name servers manage which domains
+                    -> They do not store actual IP addresses
+                -> TLD Server Response: “I don’t know the IP address of www.yahoo.com, but I know the Authoritative Name Server for yahoo.com.”
+                    -> The TLD server returns the Authoritative Name Server (ANS) details.
+            -> Resolver Queries Authoritative Name Server (ANS)
+                -> Now the resolver sends the query to the Authoritative Name Server for yahoo.com.
+                -> ANS Responsibilities:
+                    -> Holds actual DNS records
+                    -> Stores:
+                        -> IP address (A / AAAA record)
+                        -> Mail server records (MX)
+                        -> Subdomain mappings
+                        -> This is the final and trusted source.
+            -> ANS Returns IP Address:
+                -> The Authoritative Name Server responds with: www.yahoo.com → IP address
+                -> This is the final answer.
+            -> Resolver Caches the Response:
+                -> The resolver:
+                    -> Stores the IP address in its cache
+                    -> Uses TTL (Time To Live) to decide cache duration
+                    -> This helps future requests resolve faster.
+            -> Resolver Returns IP to Client:
+                -> The resolver sends the IP address back to: Operating System & Browser
+                -> The browser now knows where to send the HTTP/HTTPS request.
+            -> Browser Connects to Web Server
+                -> The browser uses the IP address to:
+                    -> Establish TCP connection
+                    -> Send HTTP/HTTPS request
+                    -> Load the website
+            -> Why Caching Is Important:
+                -> Caching occurs at: Browser level, OS level, Resolver (ISP) level
+                -> This reduces: DNS traffic, Latency, Load on root, TLD, and ANS servers
+
+=> CDN(Content Delivery Network):A CDN (Content Delivery Network) is a network of geographically distributed servers that deliver content to users from the nearest location, instead of always hitting the main server.
+    -> Goal: Reduce latency, reduce load, increase availability
+    -> Why CDN Is Needed?
+        -> Without CDN assume: Main server is in Mumbai and User is in USA (Flow: User (USA) → Mumbai Server → Response)
+        -> Problems:
+            -> High latency
+            -> Slow page load
+            -> Server overload
+            -> Bad user experience
+        -> CDN solves all this problem and with CDN:
+            -> Content is cached in multiple locations (Edge servers)
+            -> User is served from the nearest edge
+            -> Flow: User (USA) → CDN Edge (USA) → Response
+            -> Faster, Scalable and reliable
+    -> What Kind of Content Is Served by CDN?
+        -> Mostly Static Content
+            -> Image
+            -> CSS
+            -> Javascript
+            -> Video
+            -> Fonts
+            -> HTML(Sometimes)
+    -> CDN Architecture (High-Level)
+        User---------------->DNS-------------->Nearest CDN Edge Server----------(if cache miss)--------------->Origin Server (Main Server)
+    -> How CDN Works (Step-by-Step Flow)
+        -> Let’s say user opens "www.example.com/logo.png"
+        -> Step 1: DNS Resolution
+            -> DNS resolves www.example.com
+            -> Returns CDN endpoint IP, not origin server IP
+        -> Step 2: Request Reaches CDN Edge
+            -> CDN checks if logo.png exists in cache
+            -> Cache Hit ✅
+                -> File exists in edge server
+                -> Served immediately to user
+                -> Very low latency
+            -> Cache Miss ❌
+                -> CDN edge does NOT have the file
+                -> Edge fetches content from Origin Server
+                -> Stores it in cache
+                -> Returns response to user
+    -> What Is an Origin Server?
+        -> The Origin Server is: Your actual backend server where the real content lives. CDN is just a cache + delivery layer, not the source of truth.
+
+    -> CDN Caching & TTL
+        -> Each cached object in a CDN is associated with a TTL (Time To Live). Once the TTL expires, the CDN considers the cached content stale and fetches the latest version from the origin server, updates its cache, and serves the fresh content to users. This mechanism balances high performance with data freshness.
+
+    -> Geo-DNS / Anycast (How Nearest CDN Is Chosen)
+        -> CDNs use techniques such as Geo-DNS and Anycast routing to automatically route user requests to the nearest or lowest-latency CDN edge node, ensuring faster response times and optimized network paths.
+
+    -> CDN vs Load Balancer (Common Confusion): CDN reduces load before traffic reaches LB
+
+    -> Geo-DNS (Geographical DNS)
+        -> Geo-DNS is a DNS-level technique where different IP addresses are returned based on the user’s geographical location. The decision is made during DNS resolution, not during packet routing.
+        -> How Geo-DNS Works (Step-by-Step)
+            -> Assume CDN edge servers exist in: India, Europe and USA
+            -> User from india request: www.example.com
+            -> Browser sends DNS query
+            -> DNS resolver reaches Geo-DNS(Geo-DNS is NOT a separate extra hop, It is implemented at the Authoritative Name Server (ANS) level)
+            -> At the Authoritative Name Server ANS checks Resolver IP and Geographic region. ANS decides Which CDN edge IP to return
+                | User Region | IP Returned |
+                | ----------- | ----------- |
+                | India       | 13.xx.xx.xx |
+                | USA         | 52.xx.xx.xx |
+                | Europe      | 18.xx.xx.xx |
+               Same domain, different IPs
+            -> DNS server detects User’s region (based on resolver IP)
+            -> DNS returns India CDN IP
+        -> Where Is Geo-DNS Configured?
+            -> CDN provider DNS (Cloudflare, Route53, Akamai)
+            -> Your domain’s authoritative DNS
+            -> Example: example.com → managed by Route53, Route53 ANS applies Geo-DNS rules.
+            -> Concrete Example (AWS Route53)
+                -> Route53 Geo-DNS rules:
+                    -> If request from India → Mumbai CDN IP
+                    -> If request from USA → Virginia CDN IP
+                -> DNS resolver:
+                    -> Still follows Root → TLD → Route53 (ANS)
+                    -> Route53 applies Geo rules
+        -> Geo-DNS does not change DNS flow; it enhances the authoritative name server’s response logic.
+
+    -> Anycast Routing: Anycast is a network-level routing technique where the same IP address is advertised from multiple physical locations, and the network automatically routes traffic to the nearest or lowest-cost server.
+                        Decision is made by Internet routing (BGP), not DNS.
+        -> How Anycast Works (Step-by-Step)
+            -> Assume same IP 203.0.113.1 advertised from India, USA, Europe
+            -> User send request to 203.0.113.1
+            -> Internet routing Chooses the closest / lowest-latency path and Routes traffic to nearest data center
+
+=> Single Point of Failure (SPOF): A Single Point of Failure (SPOF) is any component in a system whose failure can bring down the entire system. If that one component fails → system becomes unavailable
+    -> Why SPOF Is Dangerous?
+        -> System downtime
+        -> Revenue loss
+        -> Bad user experience
+        -> SLA violations
+    -> Modern systems are designed to eliminate SPOFs.
+    -> Common SPOF Examples (Very Important)
+        -> Single Application Server : App server crashes → system down
+        -> Single Database: DB crash → complete outage
+        -> Single Load Balancer: LB crash → traffic cannot reach backend
+        -> Single DNS Provider: DNS outage → domain unreachable
+    -> How to Remove SPOF? (Core of Topic)
+        -> Redundancy (Most Important): Run multiple instances of critical components. If App1 fails → others serve traffic.
+        -> Load Balancers in HA Mode:
+        -> Database Replication
+            -> Primary–Replica
+                -> Primary → writes
+                -> Replica → reads + backup
+            -> Multi-Master: Multiple write nodes
+        -> Stateless Application Design
+        -> DNS Redundancy
+        -> Multi-AZ / Multi-Region Deployment
+
+=> Sharding (Database Sharding):
+    -> Sharding is a database scaling technique where large data is split into smaller, independent pieces called shards, and each shard is stored on a different database node.
+    -> Goal: Horizontal scalability + performance
+    -> Why Sharding Is Needed: As data grows:
+        -> Single database becomes a bottleneck
+        -> CPU, memory, storage limits hit
+        -> Queries become slow
+        -> Vertical scaling becomes expensive
+      Sharding solves this by distributing data.
+    -> Sharding vs Replication (Very Important): Real system use both together
+
+        | Aspect            | Sharding           | Replication       |
+        | ----------------- | ------------------ | ----------------- |
+        | Purpose           | Scale data         | High availability |
+        | Data              | Split across nodes | Same data copied  |
+        | Write scalability | Yes                | Limited           |
+        | Read scalability  | Yes                | Yes               |
+
+    -> Type: There are two main ways to think about sharding types: by Direction (how you cut the table) and by Strategy (the logic used to decide where data goes).
+        -> Sharding by Direction: This is the "physical" way you split your data.
+            -> Horizontal Sharding (Most Common):
+                -> You split the table by rows. Every shard has the same columns (schema), but different rows.
+                -> For example, Users 1–5000 are on Server A, and Users 5001–10000 are on Server B.
+            -> Vertical Sharding:
+                -> You split the table by columns. You move frequently accessed columns (like username and email) to one server and bulky, rarely accessed columns (like blob_profile_picture or user_bio) to another.
+
+        -> Sharding Strategies (The Logic): Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
+                                            Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
+            -> Range-Based Sharding: Data is divided into continuous ranges based on a value (like ID, Date, or Alphabet).
+                -> Example: Shard 1 handles IDs 1–100; Shard 2 handles 101–200.
+                -> Pros: Very easy to implement; great for range queries (e.g., "Get all users joined in January").
+                -> Cons: Causes hotspots. If everyone is joining in December, Shard 12 will crash while Shard 1 sits idle.
+
+            -> Hash-Based (Key-Based) Sharding: You take a Shard Key (like user_id), put it through a mathematical Hash Function, and use the result to pick a shard.
+                -> Logic: Hash(user_id) % Number_of_Shards
+                -> Pros: Distributes data very evenly; prevents hotspots.
+                -> Cons: Hard to perform range queries because consecutive IDs are scattered across different servers. Adding a new shard requires "resharding" almost all existing data.
+
+            -> Directory-Based Sharding: A central "lookup table" or "directory" keeps track of which data lives on which shard.
+                -> Example: A table says "User 45 is on Shard B" and "User 99 is on Shard A."
+                -> Pros: Extremely flexible. You can move individual users between shards without changing an algorithm.
+                -> Cons: The directory itself can become a Single Point of Failure or a performance bottleneck.
+
+            -> Geo-Based Sharding (Geosharding): Data is partitioned based on the physical location of the user.
+                -> Example: European users' data is stored in a London data center; Asian users' data is in Singapore.
+                -> Pros: Massive reduction in latency (speed) and helps with local data privacy laws (like GDPR).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+=> Sharding and its Type
+    -> Horizontal Sharding
+        -> Range based Sharding
+        -> Hash Based Sharding
+    -> Vertical Sharding
+    -> Hierarchical Sharding
+

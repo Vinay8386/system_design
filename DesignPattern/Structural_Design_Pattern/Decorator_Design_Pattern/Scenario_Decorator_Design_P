@@ -1,0 +1,63 @@
+=> Definition: Decorator Pattern allows you to add new behavior to an object dynamically without modifying its existing code. It follow open-close principal.
+
+=> Main concept behind the Decorator pattern (Java concept used):
+    -> Only a concrete class must implement all interface methods.
+    -> An abstract class is allowed to leave work unfinished. Abstract class can:
+        -> implement all methods
+        -> implement some methods
+        -> implement none of the methods
+    -> One major point is instantiation of abstract class is not possible because Java enforces interface method implementation only when a class becomes instantiable.
+    -> So the question arises: Who will be forced later to implement those methods?
+        -> The first non-abstract (concrete) class in the hierarchy.
+        -> For example:
+            interface A {
+                void m1();
+            }
+            abstract class C implements A {  //✔ NO error
+            }
+            class D extends C {  //❌ ERROR
+            }
+            class D extends C {   //✔ Now OK
+                public void m1() {
+                    System.out.println("Implemented");
+                }
+            }
+
+=> Key Idea
+    -> Use composition instead of inheritance
+    -> Wrap an object inside another object that adds new behavior
+
+=> When to use?
+    -> When you have optional feature.
+    -> When subclass explosion is happening.
+    -> When behaviour need to be added at runtime.
+
+=> Problem in our Food Delivery Scenario
+    -> Requirements:
+        -> A user can order:
+            -> Pizza
+            -> With extra cheese
+            -> With topping
+            -> With gift wrapping
+            -> With premium packaging
+
+        -> Without Decorator – What Happens?
+            -> Pizza
+            -> PizzaWithCheese
+            -> PizzaWithCheeseAndToppings
+            -> PizzaWithCheeseToppingsAndGiftWrap
+
+            -> Problem: Class explosion problem
+
+        -> Existing Code (Before Decorator), Issue is
+            -> Too many if-else
+            -> Adding new add-on → modify method
+            -> Not scalable
+            -> Breaks Open–Closed Principle
+
+        -> Now Applying Decorator Pattern – Step by Step
+            -> Step 1️⃣ Create a Common Interface (Component): FoodItem
+            -> Step 2️⃣ Create Concrete Component: Pizza
+            -> Step 3️⃣ Create Abstract Decorator (This is the core of Decorator Pattern): FoodDecorator
+            -> Step 4️⃣ Create Concrete Decorators (Add-ons): ExtraCheeseDecorator, ToppingsDecorator
+            -> Client Code (Runtime Decoration): OrderClient

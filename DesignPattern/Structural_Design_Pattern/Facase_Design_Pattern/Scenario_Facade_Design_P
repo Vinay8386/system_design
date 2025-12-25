@@ -1,0 +1,48 @@
+=> Definition: Facade Pattern means Front face / entry gate, provides a single simplified interface to a complex subsystem. Client will talk to only one object and that
+               object internally coordinates multiple subsystem.
+
+=> Purpose:
+    -> Reduce complexity for client
+    -> Decouple client from internal system details
+    -> Improve readability and maintainability
+
+=> Problem after decorator pattern:
+    -> Even after Decorator, client code still looks like below:
+       FoodItem food = new Pizza();                     //1
+       food = new ExtraCheeseDecorator(food);
+       food = new ToppingsDecorator(food);
+
+       PaymentService payment = new PaymentService();  //2
+       payment.pay(food.getCost());
+
+       DeliveryService delivery = new DeliveryService();    //3
+       delivery.assignDeliveryPartner();
+
+       NotificationService notification = new NotificationService();    //4
+       notification.sendNotification();
+
+    -> Client knows too much and tightly coupled with many services. And in case of any changes in these will impact client code. This is where Facade fits perfectly
+
+=> Facade Pattern Concept in Our Scenario
+    -> Subsystems:
+        -> Order creation
+        -> Price calculation
+        -> Payment
+        -> Delivery
+        -> Notification
+    -> Facade: OrderFacade
+    -> Client will do orderFacade.placeOrder();
+
+=> Implementation:
+    -> Component Interface : FoodItem
+    -> Concrete Component: Pizza
+    -> Abstract Decorator: FoodDecorator(implements FoodItem)
+    -> Concrete Decorators: ToppingsDecorator, ExtraCheeseDecorator
+    -> Subsystem Classes (Business Services):
+        -> PaymentService ----> DeliveryService ---->  NotificationService
+        -> Facade: OrderFacade(Provides a simplified interface over Payment, Delivery, and Notification subsystems)
+    -> Client: OrderClient
+
+=> Conceptual Flow
+    -> OrderClient → uses OrderFacade → which internally coordinates subsystem services, while food customization is handled independently using the Decorator pattern.
+
