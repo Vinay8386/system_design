@@ -1,0 +1,35 @@
+=> Bridge Pattern decouples an abstraction from its implementation so that both can evolve independently. It Separate WHAT we do from HOW we do it and avoid Avoid class explosion caused by inheritance.
+   In Bridge pattern, the client connects abstraction and implementation at runtime, allowing both hierarchies to grow independently.
+
+=> Problem Without Bridge (Real Issue):
+    -> Food ordering app supports:
+        -> Order types: OnlineOrder, InStoreOrder
+        -> Payment modes: CardPayment, UPIPayment
+    -> Without bridge inheritance explosion, if you add one more order type and one more payment method. Classes grow exponentially.
+    -> Implementation:
+        -> Step 1: Implementor Interface (HOW payment is done)
+            -> PaymentMethod:
+                -> Defines how payment should be made
+                -> Does NOT know anything about orders
+        -> Step 2: Concrete Implementations (Actual payment logic)
+            -> CardPayment & UPIPayment
+                -> Implements PaymentMethod
+                -> Contains real payment logic
+                -> Can be extended independently (new payment types)
+        -> Step 3: Abstraction (WHAT kind of order it is)
+            -> Order:
+                -> Holds a reference to PaymentMethod
+                -> Acts as a bridge between order and payment
+                -> Does not depend on concrete payment classes
+        -> Step 4: Refined Abstractions (Different order types)
+            -> OnlineOrder:
+            -> InStoreOrder:
+                -> Extends Order
+                -> Defines order-specific behavior
+                -> Reuses payment logic via PaymentMethod
+        -> Step 5: Client (Uses the system)
+            -> OrderClient
+                -> Creates payment method
+                -> Creates order type
+                -> Combines them at runtime
+                -> Does NOT know internal implementation details

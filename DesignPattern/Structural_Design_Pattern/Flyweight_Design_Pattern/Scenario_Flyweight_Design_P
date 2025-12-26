@@ -1,0 +1,75 @@
+=> Flyweight Pattern reduces memory usage by sharing common objects instead of creating new ones every time. In simple words:
+    -> Do not create duplicate objects
+    -> Share reusable objects
+    -> Store only unique state
+
+=> Core concept: Flyweight is basically a cache of intrinsic objects.
+                 If an object with the same intrinsic state exists, reuse it; otherwise, create and cache it.
+
+=> When Do We Need Flyweight?
+    -> Use Flyweight when:
+        -> Huge number of similar object.
+        -> Memory Usage become a problem.
+        -> Objects have repeated data.
+
+=> Real-World Scenario (Food App):
+    Imagine: Thousands of pizza order and same food item are repeated again and again with same price name and recipe. Now creating new pizza object every time is a waste of memory.
+             Flyweight says “Store only what is common inside the object, pass the rest from outside.”
+    -> Flyweight Pattern use basically two type of states, Consider one example to understand this two states:
+        -> Example: Imagine a pizza shop.
+            -> What is same for every pizza: Food Name, Price, Recipe
+            -> What is different for every order: Order ID, Customer name, Table number / Delivery address
+        -> Intrinsic State (SHARED): Data that is same for all objects and never changes Example: Food Name, Price, Recipe, Image
+                                     Stored inside the flyweight object and Shared among many clients
+        -> Extrinsic State (NOT SHARED): Data that changes per usage or per context Example: Order ID, Customer name, Table number / Delivery address
+                                         Stored outside the flyweight and Passed by the client when needed
+
+=> Code Implementation
+    -> WITHOUT Flyweight:
+
+        FoodItem pizza1 = new Pizza();
+        FoodItem pizza2 = new Pizza();
+        FoodItem pizza3 = new Pizza();
+
+    -> WITH Flyweight:
+        -> Step 1: Flyweight Interface: FoodItem
+            -> Defines the common operations that flyweight objects support
+            -> Does not store context-specific data
+            -> Acts as a contract for all shared objects
+
+        -> Step 2: Concrete Flyweight: Pizza
+            -> Implements FoodItem
+            -> Stores intrinsic (shared) state such as name and price
+            -> This object is immutable and reusable
+            -> Created only once and shared across the system
+
+        -> Step 3: Flyweight Factory (MOST IMPORTANT): FoodItemFactory
+            -> Responsible for creating and managing flyweight objects
+            -> Maintains a cache of already created objects
+            -> Returns an existing object if available, otherwise creates a new one
+            -> Ensures object reuse and memory optimization
+
+        -> step 4: Client: OrderClient
+            -> Requests flyweight objects from the factory
+            -> Supplies extrinsic (context-specific) state such as orderId
+            -> Does not create objects directly
+            -> Uses shared objects without knowing they are shared
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
