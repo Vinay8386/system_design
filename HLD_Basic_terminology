@@ -605,49 +605,69 @@
         -> DNS Redundancy
         -> Multi-AZ / Multi-Region Deployment
 
-=> Sharding (Database Sharding):
-    -> Sharding is a database scaling technique where large data is split into smaller, independent pieces called shards, and each shard is stored on a different database node.
-    -> Goal: Horizontal scalability + performance
-    -> Why Sharding Is Needed: As data grows:
-        -> Single database becomes a bottleneck
-        -> CPU, memory, storage limits hit
-        -> Queries become slow
-        -> Vertical scaling becomes expensive
-      Sharding solves this by distributing data.
-    -> Sharding vs Replication (Very Important): Real system use both together
+=> Database replication: It is used in many database management system, usually with a master slave relationship between the original(master) and copies(slaves).
+                         A master database generally only support write operation. A slave database get copies of data from master database and only support read operation.
+                         All the data modifying commands like insert, delete or update must be sent to the master database. Most applications require a much higher ratio of reads to writes
+                         This the number of slave database in a system is usually larger than the number of master databases.
+   -> What if one database goes offline?
+        -> If only one slave database is available and it goes offline, read operations will be directed to the master database temporarily. As soon as the issue is found,
+           A new slave database will replace the old one.In case multiple slave database are available, read operation are redirected to other healthy slave databases.
+           A new database server will replace the old one.
+        -> If master database goes offline, a slave database will be promoted to be the new master. All the database operations will be temporarily executed on the new master database.
+            A new slave database will replace the old one for data replication immediately.
+             
+=> Database Scaling: There are two broad approaches for database scaling.
+    -> Vertical Scaling(Scaling-Up): In this, scaling will be done by adding more power(CPU, RAM, DISK...etc) to an existing machine. There are some powerful database server.
+                                     According to Amazon RDS(Relational Database Service), you can get database server with 24 TB of RAM.
+                                     Vertical scaling comes with some serious drawback:
+                                     -> Hardware limit: If you have a larger user base, a single server is not enough.
+                                     -> Greater risk of SPOF (Single Point Of Failure)
+                                     -> Overall cost of vertical scaling is high. Powerful server are much more expensive.
+    -> Horizontal Scaling: Horizontal scaling is also known as sharding.
+        -> Sharding : Sharding is a database scaling technique where large data is split into smaller, independent pieces called shards, and each shard is stored on a different database node.
+            -> Goal: Horizontal scalability + performance
+            -> Why Sharding Is Needed: As data grows:
+                -> Single database becomes a bottleneck
+                -> CPU, memory, storage limits hit
+                -> Queries become slow
+                -> Vertical scaling becomes expensive
+              Sharding solves this by distributing data.
+            -> Sharding vs Replication (Very Important): Real system use both together
 
-        | Aspect            | Sharding           | Replication       |
-        | ----------------- | ------------------ | ----------------- |
-        | Purpose           | Scale data         | High availability |
-        | Data              | Split across nodes | Same data copied  |
-        | Write scalability | Yes                | Limited           |
-        | Read scalability  | Yes                | Yes               |
+                | Aspect            | Sharding           | Replication       |
+                | ----------------- | ------------------ | ----------------- |
+                | Purpose           | Scale data         | High availability |
+                | Data              | Split across nodes | Same data copied  |
+                | Write scalability | Yes                | Limited           |
+                | Read scalability  | Yes                | Yes               |
 
-    -> Type: There are two main ways to think about sharding types: by Direction (how you cut the table) and by Strategy (the logic used to decide where data goes).
-        -> Sharding by Direction: This is the "physical" way you split your data.
-            -> Horizontal Sharding (Most Common):
-                -> You split the table by rows. Every shard has the same columns (schema), but different rows.
-                -> For example, Users 1–5000 are on Server A, and Users 5001–10000 are on Server B.
-            -> Vertical Sharding:
-                -> You split the table by columns. You move frequently accessed columns (like username and email) to one server and bulky, rarely accessed columns (like blob_profile_picture or user_bio) to another.
+            -> Type: There are two main ways to think about sharding types: by Direction (how you cut the table) and by Strategy (the logic used to decide where data goes).
+                -> Sharding by Direction: This is the "physical" way you split your data.
+                    -> Horizontal Sharding (Most Common):
+                        -> You split the table by rows. Every shard has the same columns (schema), but different rows.
+                        -> For example, Users 1–5000 are on Server A, and Users 5001–10000 are on Server B.
+                    -> Vertical Sharding:
+                        -> You split the table by columns. You move frequently accessed columns (like username and email) to one server and bulky, rarely accessed columns (like blob_profile_picture or user_bio) to another.
 
-        -> Sharding Strategies (The Logic): Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
-                                            Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
-            -> Range-Based Sharding: Data is divided into continuous ranges based on a value (like ID, Date, or Alphabet).
-                -> Example: Shard 1 handles IDs 1–100; Shard 2 handles 101–200.
-                -> Pros: Very easy to implement; great for range queries (e.g., "Get all users joined in January").
-                -> Cons: Causes hotspots. If everyone is joining in December, Shard 12 will crash while Shard 1 sits idle.
+                -> Sharding Strategies (The Logic): Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
+                                                    Once you decide to shard horizontally, you need a rule (a Shard Key) to determine which shard a specific piece of data belongs to.
+                    -> Range-Based Sharding: Data is divided into continuous ranges based on a value (like ID, Date, or Alphabet).
+                        -> Example: Shard 1 handles IDs 1–100; Shard 2 handles 101–200.
+                        -> Pros: Very easy to implement; great for range queries (e.g., "Get all users joined in January").
+                        -> Cons: Causes hotspots. If everyone is joining in December, Shard 12 will crash while Shard 1 sits idle.
 
-            -> Hash-Based (Key-Based) Sharding: You take a Shard Key (like user_id), put it through a mathematical Hash Function, and use the result to pick a shard.
-                -> Logic: Hash(user_id) % Number_of_Shards
-                -> Pros: Distributes data very evenly; prevents hotspots.
-                -> Cons: Hard to perform range queries because consecutive IDs are scattered across different servers. Adding a new shard requires "resharding" almost all existing data.
+                    -> Hash-Based (Key-Based) Sharding: You take a Shard Key (like user_id), put it through a mathematical Hash Function, and use the result to pick a shard.
+                        -> Logic: Hash(user_id) % Number_of_Shards
+                        -> Pros: Distributes data very evenly; prevents hotspots.
+                        -> Cons: Hard to perform range queries because consecutive IDs are scattered across different servers. Adding a new shard requires "resharding" almost all existing data.
 
-            -> Directory-Based Sharding: A central "lookup table" or "directory" keeps track of which data lives on which shard.
-                -> Example: A table says "User 45 is on Shard B" and "User 99 is on Shard A."
-                -> Pros: Extremely flexible. You can move individual users between shards without changing an algorithm.
-                -> Cons: The directory itself can become a Single Point of Failure or a performance bottleneck.
+                    -> Directory-Based Sharding: A central "lookup table" or "directory" keeps track of which data lives on which shard.
+                        -> Example: A table says "User 45 is on Shard B" and "User 99 is on Shard A."
+                        -> Pros: Extremely flexible. You can move individual users between shards without changing an algorithm.
+                        -> Cons: The directory itself can become a Single Point of Failure or a performance bottleneck.
 
-            -> Geo-Based Sharding (Geosharding): Data is partitioned based on the physical location of the user.
-                -> Example: European users' data is stored in a London data center; Asian users' data is in Singapore.
-                -> Pros: Massive reduction in latency (speed) and helps with local data privacy laws (like GDPR).
+                    -> Geo-Based Sharding (Geosharding): Data is partitioned based on the physical location of the user.
+                        -> Example: European users' data is stored in a London data center; Asian users' data is in Singapore.
+                        -> Pros: Massive reduction in latency (speed) and helps with local data privacy laws (like GDPR).
+
+
