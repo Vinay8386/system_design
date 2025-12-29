@@ -1,0 +1,19 @@
+=> Pass the request along a chain of handlers until one of them handles it. Each Handlers:
+    -> Decide whether it can handle the request.
+    -> Otherwise passes it to the next handlers.
+
+=> Scenario: Order Approval System. Order amount approval:
+    -> 1,000 → Manager
+    -> 5,000 → Director
+    -> Above 5,000 → CEO
+
+=> Implementation Flow:
+    -> Step 1: Handler Interface (OrderApprover)
+        -> Declare method to set next handler and handle request
+    -> Step 2: Abstract Handler (Optional but Recommended): AbstractApprover
+        -> Stores reference to next handler
+        -> Avoids code duplication
+    -> Step 3: Concrete Handlers: Manager, Director, CEO
+    -> Step 4: Client Code (Chain Setup)
+
+=> Real time example: Spring Security filter

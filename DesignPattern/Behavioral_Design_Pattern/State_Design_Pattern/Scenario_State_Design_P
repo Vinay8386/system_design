@@ -1,0 +1,26 @@
+=> Definition: In real applications, an object’s behavior changes based on its current state.
+
+=> Scenario: Food Order State Management
+    -> User Action: Place Order, Cancel Order, Deliver Order. Behaviour depends on current order state
+    -> State Pattern – Implementation Flow
+        -> Step 1: Create State Interface (OrderState). This is the common contract for all states.
+            -> Defines all possible actions that depend on state
+            -> Example methods: placeOrder(), cancelOrder(), deliverOrder()
+        -> Create Concrete State Classes
+            -> CreatedState, PlacedState, DeliveredState, CancelledState
+            -> Each class implements OrderState
+            -> Contains state-specific behavior
+            -> Decides what actions are allowed or not
+            -> Each state knows how to behave.
+        -> Create Context Class (Order)
+            -> Holds a reference to the current state
+            -> Delegates action calls to the current state
+            -> Allows state transitions using setState()
+            -> Context is the main object whose behavior changes.
+        -> Handle State Transitions
+            -> Concrete state decides: What the next state should be
+            -> When to change the state
+            -> State transition happens via the context
+            -> State controls the flow, not the client.
+        -> Client Code
+            -> Client creates the Order and call action like placeOrder() or cancelOrder()

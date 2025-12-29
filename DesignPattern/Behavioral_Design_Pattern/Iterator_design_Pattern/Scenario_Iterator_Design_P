@@ -1,0 +1,9 @@
+=> Provide a way to access elements of a collection sequentially without exposing its internal representation.
+   Collection stores data, Iterator knows how to traverse it.
+
+=> Implementation Flow:
+    -> Step 1: Iterator Interface (Iterator<T>)
+    -> Step 2: Aggregate Interface (Menu)
+    -> Step 3: Concrete Collection (FoodMenu)
+    -> Step 4: Concrete Iterator (FoodMenuIterator)
+    -> Step 5: Client Code

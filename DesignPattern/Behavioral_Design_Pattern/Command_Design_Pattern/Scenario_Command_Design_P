@@ -1,0 +1,91 @@
+=> Command Pattern turns a request into an object, so that the request can be executed, undone, or queued.
+   For example: You press a button on a remote. Remote doesn't know what exactly happens. It just send a command and TV execute it.
+   Button-> invoker, Command-> Action, TV-> Receiver
+
+=> Problem Statement: Real Situation in a Food Ordering App
+    -> In a food ordering application, a user can perform different actions on an order, such as:
+        -> Place Order – confirm and place a new food order
+        -> Cancel Order – cancel an already placed order
+        -> Reorder – place the same order again
+    -> Each of these actions:
+        -> Represents a user request
+        -> Triggers different business logic
+        -> Is initiated from the UI (button click, API call, etc.)
+    -> What Is the Problem Here?
+        -> Normally the UI layer would directly call method
+            -> placeOrder()
+            -> cancelOrder()
+            -> reOrder()
+        -> This creates problem:
+            -> UI becomes tightly coupled with business logic
+            -> Hard to add features like:
+                -> undo / redo
+                -> logging user actions
+                -> queuing requests
+            -> Difficult to change behaviour without modifying UI code.
+
+=> How Command Pattern Helps
+    -> Command Pattern treats each user action as a separate object. Instead of calling methods directly:
+        -> Place Order becomes PlaceOrderCommand
+        -> Cancel Order becomes CancelOrderCommand
+        -> Reorder becomes ReorderCommand
+    -> Each command object:
+        -> Knows what action to perform
+        -> Knows which service should perform it
+        -> Can be executed, stored, logged, or undone
+    -> Flow:
+        -> User clicks a button (Place / Cancel / Reorder)
+        -> Corresponding command object is created
+        -> Command is passed to an invoker
+        -> Invoker executes the command
+        -> Business logic runs in the service
+
+    -> Implementation:
+        -> Bad Design(Without Command)
+           public class OrderController {
+
+               public void placeOrder() {
+                   // place order logic
+               }
+
+               public void cancelOrder() {
+                   // cancel order logic
+               }
+           }
+            -> Problem:
+                -> UI tightly coupled with business logic
+                -> Hard to add undo / logging / queueing
+                -> Violates Single Responsibility Principle
+        -> Command Pattern Solution
+            -> Encapsulate each action into a Command object
+            -> Separate:
+                -> Invoker → triggers command
+                -> Command → defines action
+                -> Receiver → performs action
+            -> Code:
+                -> Step 1: Command Interface: OrderCommand
+                    -> This interface defines what a command can do
+                    -> It usually contains a single method like execute()
+                    -> All user actions will follow this same structure
+                    -> Think of this as a common button action contract.
+                -> Step 2: Receiver (Business Logic): OrderService
+                    -> This class contains the actual business logic
+                    -> It knows how to place, cancel, or reorder an order
+                    -> Commands will internally call methods of this class
+                -> Step 3: Concrete Commands: PlaceOrderCommand, CancelOrderCommand. Each command class:
+                    -> Implements OrderCommand
+                    -> Represents one user action
+                    -> Holds a reference to OrderService
+                -> Step 4: Create Invoker
+                    -> Invoker is responsible for triggering the command
+                    -> It does not know:
+                        -> what the command does
+                        -> how the action is implemented
+                    -> It simply calls execute()
+                    -> Invoker acts like a remote control or button.
+                -> Step 5: Client Code
+                    Client:
+                        -> Creates the receiver
+                        -> Creates command objects
+                        -> Assigns commands to the invoker
+                -> Client decides which command to execute and when

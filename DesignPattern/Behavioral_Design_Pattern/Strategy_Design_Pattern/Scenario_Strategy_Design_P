@@ -1,0 +1,93 @@
+=> Strategy Pattern allows us to choose one behavior from multiple options at runtime, without using if-else or switch statements. or
+   Strategy Pattern means: “Keep different ways of doing a task in separate classes and pick the one you need at runtime.”
+
+=> Why do we need Strategy?
+    -> Scenario: Payment in Food Ordering App. A food app support UPI, Credit Card, Debit Card, Net Banking
+    -> Bad design:
+        public class PaymentService {
+
+            public void pay(String paymentType, double amount) {
+                if (paymentType.equals("UPI")) {
+                    System.out.println("Paying via UPI: " + amount);
+                } else if (paymentType.equals("CARD")) {
+                    System.out.println("Paying via Credit Card: " + amount);
+                } else if (paymentType.equals("NETBANKING")) {
+                    System.out.println("Paying via Net Banking: " + amount);
+                }
+            }
+        }
+    -> Problem:
+        -> Violates Open-Closed Principle
+        -> Every new payment → modify this class
+        -> Hard to test
+        -> Logic tightly coupled
+
+    -> Strategy Pattern Solution: Extract behavior into separate classes and use composition over inheritance and switch behaviour at runtime.
+        client----------->context(PaymentService)----------->Strategy(PaymentStrategy)-------------------->Concrete Strategies(UPI, Card, Net Banking)
+    -> Implementation:
+        -> Step 1: Strategy Interface: PaymentStrategy
+            -> This interface defines what needs to be done, not how it is done
+            -> All payment methods will follow this same contract
+            -> Example: pay(amount) method is common for all payments
+        -> Step 2: Concrete Strategies: UpiPayment, CardPayment, NetBankingPayment
+            -> Each class implements PaymentStrategy
+            -> Each class contains its own payment logic
+            -> Logic is completely separate and independent
+            -> UpiPayment → UPI logic, CardPayment → Card logic, NetBankingPayment → Net banking logic
+        -> Step 3: Context Class (MOST IMPORTANT): PaymentService //Context does not know which payment it is using.
+            -> This is the main class used by the client
+            -> It contains a reference to PaymentStrategy
+            -> It does NOT know which payment method it is using
+            -> It simply delegates the work to the selected strategy. The strategy can be injected in two ways:
+                -> Option 1: Constructor Injection
+                    -> Used when payment method is fixed
+                    -> Strategy cannot change after object creation: "new PaymentService(new UpiPayment());"
+                -> Option 2: Setter Injection
+                    -> Used when payment method can change at runtime
+                    -> Example: user switches from UPI to Card on checkout page "paymentService.setPaymentStrategy(new CardPayment());"
+        -> Step 4: Client
+            -> Client decides which payment strategy to use
+            -> Client injects the selected strategy into PaymentService
+            -> Client never directly executes payment logic
+            -> Example:
+                -> Client chooses UPI → injects UpiPayment
+                -> Client chooses Card → injects CardPayment
+
+    -> When to Use Constructor Injection
+        -> Strategy does not change during object lifetime
+        -> Want immutability (final)
+        -> Cleaner and safer design
+        -> Preferred in Spring / Dependency Injection
+        -> Fail-fast design
+
+    -> When to Use Setter Injection
+        -> Strategy needs to change dynamically
+        -> Example: User switches payment method on checkout page
+        -> One context object reused
+        -> Runtime flexibility
+
+
+=> Optimizing Payment System using Strategy + Factory
+    -> To make our payment system more clean, scalable, and closer to real-world applications, we can optimize it by combining Strategy Pattern with Factory Pattern.
+    -> Step 1: Create a Factory Class: PaymentStrategyFactory
+        -> This factory is responsible for creating payment strategy objects
+        -> All object creation logic is kept at one central place
+        -> Client code does not need to know concrete class names
+        -> Makes the system easy to extend when new payment methods are added
+        -> Now, if a new payment method is introduced, changes are required only inside the factory.
+    -> Step 2: Update Client Class based on UI Selection
+        -> Client receives the user’s selected payment option from UI
+        -> Client passes this input to the factory
+        -> Factory returns the appropriate PaymentStrategy
+        -> The strategy is injected into PaymentService
+        -> Client focuses only on user input and flow, not object creation.
+
+    -> Updated Flow (Simple)
+        -> User selects payment method on UI (UPI / Card / NetBanking)
+        -> Client sends the selected option to PaymentStrategyFactory
+        -> Factory creates the correct PaymentStrategy object
+        -> Strategy is injected into PaymentService
+        -> PaymentService executes the payment
+
+=> If, in the future, multiple types of cards or wallets are introduced, this design can be further optimized by using the Abstract Factory pattern.
+

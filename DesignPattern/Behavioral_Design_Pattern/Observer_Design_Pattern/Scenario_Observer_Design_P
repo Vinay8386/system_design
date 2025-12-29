@@ -1,0 +1,85 @@
+=> Observer Pattern allows one object to notify multiple other objects automatically when its state changes. When something changes, everyone who is interested gets notified.
+
+=> Real-Life Analogy: You subscribe to a YouTube channel, whenever a new video is uploaded. All subscribers get notified. Channel → Subject Subscribers → Observers
+
+=> Scenario: Order Status Update in Food App
+    -> Order status can change:
+        -> PLACED
+        -> PREPARING
+        -> OUT_FOR_DELIVERY
+        -> DELIVERED
+    -> Interested parties:
+        -> Customer (App notification)
+        -> Restaurant
+        -> Delivery partner
+        -> Email / SMS service
+    -> Bad Design (Without Observer)
+        public class OrderService {
+
+            public void updateOrderStatus(String status) {
+                System.out.println("Order status updated to " + status);
+                sendEmail(status);
+                sendSMS(status);
+                pushAppNotification(status);
+            }
+        }
+    -> Problem:
+        -> Tightly Coupled
+        -> Adding new notification -> modify class
+        -> Violate Open-Closed Principle
+
+=> Observer Pattern Solution
+    -> Subject maintain a list of observers
+    -> Observers register/unregister
+    -> Subject notifies all observers when state changes.
+    -> Structure:
+        Subject(Order)---------notify()------------>Observers(Customer, Restaurant, Delivery, Email)
+
+    -> Implementation:
+        -> Step 1: Observer Interface: OrderObserver
+            -> This interface defines how observers will be notified
+            -> All notification classes must implement this interface
+            -> It usually contains a single method like update()
+            -> Think of this as a contract: “Whenever order status changes, this method will be called.”
+        -> Step 2: Concrete Observers: CustomerNotification, DeliveryPartnerNotification, EmailNotification
+            -> Each class implements OrderObserver
+            -> Each observer reacts in its own way when the order status changes
+            -> Logic is independent and loosely coupled
+            -> Example: Customer → App notification
+            -> Delivery Partner → Delivery update
+            -> Email → Email notification
+            -> Adding a new notification does not affect existing code.
+        -> Step 3: Subject Interface: OrderSubject
+            -> This interface defines subscription management
+            -> It contains methods to:
+                -> register observers
+                -> remove observers
+                -> notify observers
+                -> Subject controls who is listening.
+        -> Step 4: Concrete Subject: Order
+            -> Implements OrderSubject
+            -> Maintains a list of observers
+            -> Holds the state (order status)
+            -> Whenever state changes, it automatically notifies all observers
+            -> Order does not care what observers do with the update.
+        -> Client Code: OrderClient
+            -> Client creates the Order object
+            -> Client registers required observers
+            -> Client updates order status
+            -> Notifications happen automatically
+            -> Client only triggers the change; notification flow is handled internally.
+
+=> Observer Pattern vs 📡 Publish–Subscribe (Pub-Sub)
+    -> Observer Pattern: Observers directly subscribe to a subject, and the subject notifies them when something changes.
+    -> Pub-Sub Pattern: Publishers send messages to a broker, and subscribers receive messages from the broker without knowing each other.
+    -> Observer vs Pub-Sub – Decision Table
+
+        | Scenario                    | Better Choice | Why              |
+        | --------------------------- | ------------- | ---------------- |
+        | Monolith application        | Observer      | Simple, direct   |
+        | LLD interview               | Observer      | GoF pattern      |
+        | UI events                   | Observer      | In-memory        |
+        | Microservices               | Pub-Sub       | Loose coupling   |
+        | Cross-service communication | Pub-Sub       | Async & scalable |
+        | Small system                | Observer      | Less overhead    |
+

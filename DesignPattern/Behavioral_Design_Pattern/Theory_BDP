@@ -1,0 +1,42 @@
+=> Creational = How objects are created
+   Structural = How objects are structured
+   Behavioral = How objects behave & talk to each other
+
+=> Behavioral Design Patterns focus on how object communicate, responsibilities are distributed and behaviour changes at runtime without tightly coupling the classes.
+   This pattern helps in:
+    -> Reducing tight coupling
+    -> Making systems flexible and extensible
+    -> Implementing open–closed principle
+    -> Handling complex workflows and state transitions
+
+=> MANGA interviews often test:
+    -> How will you change behavior without modifying existing code?
+    -> How will objects communicate without knowing each other directly?
+    -> Answer for both the question is Behavioral design pattern.
+
+=> List of Behavioral Design Patterns (GOF – Must Know)
+    -> Strategy
+    -> Observer
+    -> Command
+    -> State
+    -> Chain of Responsibility
+    -> Template Method: pending
+    -> Iterator
+    -> Mediator: pending
+    -> Memento: pending
+    -> Visitor: pending
+    -> Interpreter: pending
+
+=> Most asked in interviews:
+    -> Strategy, Observer, Command, State, Chain of Responsibility, Template Method
+
+=> Scenario: Online Food Ordering System
+    -> We’ll apply different behavioral patterns to:
+        -> Payment selection
+        -> Order status updates
+        -> Discount calculation
+        -> Order processing pipeline
+        -> UI / Notification changes
+        -> Workflow transitions
+
+
