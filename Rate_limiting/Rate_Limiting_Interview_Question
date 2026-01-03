@@ -1,0 +1,116 @@
+=> What is rate limiting?
+=> Why do we need rate limiting?
+=> What problems does rate limiting solve?
+=> Rate limiting vs throttling — what’s the difference?
+=> Where is rate limiting used in real systems?
+=> What happens if we don’t implement rate limiting?
+=> Is rate limiting a security feature or scalability feature?
+=> Can rate limiting prevent DDoS attacks?
+=> Is rate limiting applied per user or per IP?
+
+
+=> What are different rate limiting algorithms?
+=> Explain Token Bucket algorithm
+=> Explain Leaky Bucket algorithm
+=> Token Bucket vs Leaky Bucket
+=> Fixed Window Counter — problems?
+=> Sliding Window Log — why is it expensive?
+=> Sliding Window Counter — how does it fix fixed window issues?
+=> Which algorithm handles burst traffic better?
+=> Which algorithm provides smoother output rate?
+=> Which algorithm is most commonly used in production?
+
+    Token Bucket (Deep Dive – MAANG Favorite)
+=> What does a token represent?
+=> What happens when bucket is full?
+=> Can token bucket allow burst traffic?
+=> What is token refill rate?
+=> How do you calculate token refill?
+=> What happens if tokens are exhausted?
+=> Can token bucket reject requests?
+=> How is token bucket better than leaky bucket?
+=> Is token bucket pull-based or push-based?
+=> Can token bucket be implemented in distributed systems?
+
+    Leaky Bucket (Trick Questions)
+=> Why does leaky bucket enforce constant output rate?
+=> Does leaky bucket allow burst traffic?
+=> What happens if input rate > leak rate?
+=> How is leaky bucket similar to a queue?
+=> Why is leaky bucket bad for modern APIs?
+=> Can leaky bucket cause request drops?
+=> Is leaky bucket suitable for user-facing APIs?
+
+
+
+=> Design a rate limiter for an API
+=> Design rate limiter for millions of users
+=> Design a distributed rate limiter
+=> How will you implement rate limiting in microservices?
+=> How do you apply different limits for free vs paid users?
+=> How do you handle rate limiting across multiple servers?
+=> Where should rate limiting logic live?
+    -> Client?
+    -> API Gateway?
+    -> Load Balancer?
+    -> Application layer?
+=> Consistency vs availability trade-off
+=> Why is rate limiting hard in distributed systems?
+=> How do you keep rate limit counters consistent?
+=> Redis vs local memory — trade-offs?
+=> How do you avoid race conditions?
+=> How do you handle Redis latency?
+=> What happens if Redis goes down?
+=> How do you scale rate limiter itself?
+=> How do you avoid single point of failure?
+=> Keywords interviewers expect: Redis, Atomic operations, Lua scripts, TTL, Eventually consistent limits
+
+
+    Practical & Real-World Scenarios
+=> Rate limit login API — how?
+=> Rate limit OTP requests — how?
+=> Rate limit search API — how?
+=> Rate limit search API — how?
+=> Rate limit internal microservice calls?
+=> Rate limit based on: IP?, User ID?, API key?, Device ID?
+=> How does HTTP return rate limit errors?
+=> Which status code is used for rate limiting?
+=> What is 429 Too Many Requests?
+=> What are rate limit headers? (X-RateLimit-Limit, X-RateLimit-Remaining, Retry-After)
+=> Should client retry immediately after 429?
+
+
+    Trade-offs & Design Decisions (High Impact)
+=> Hard limit vs soft limit
+=> Reject request vs delay request
+=> Per-user vs per-IP rate limiting
+=> Global rate limit vs endpoint-level limit
+=> Accuracy vs performance
+=> Centralized vs decentralized rate limiter
+
+
+    Follow-up & Tricky Questions
+=> Can rate limiting replace authentication?
+=> Is rate limiting enough to stop DDoS?
+=> Can attackers bypass rate limiting?
+=> What if attacker uses multiple IPs?
+=> Can rate limiting affect user experience?
+=> How do you test rate limiting?
+=> How do you monitor rate limiting effectiveness?
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

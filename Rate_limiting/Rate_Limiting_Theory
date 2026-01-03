@@ -1,0 +1,266 @@
+=> Definition: Rate limiting means Restricting how many requests a client (user/IP/API key) can make within a fixed time window.
+               It controls the rate at which users or services can access a resource.
+               If the limit is exceeded → requests are blocked, delayed, or rejected (429 Too Many Requests). Here are some examples:
+    -> A user can send a message no more than 2 per second
+    -> One can create a maximum of 10 accounts per day from the same IP address
+    -> One can claim rewards no more than 5 times per week from the same device
+
+=> Denial of Service (DoS) attack: A DoS attack happens when:
+    -> An attacker sends huge numbers of requests
+    -> The server becomes overloaded
+    -> Legitimate users cannot access the service
+    -> DoS does not need hacking the system. It simply floods the system with traffic
+    -> For Example: Normal user → 5 requests/sec, Attacker → 50,000 requests/sec
+
+=> Resource Starvation: Resource starvation means Legitimate users do not get system resources because they are already consumed.
+    -> Resources include: CPU, Memory, DB Connection, Threads, Network bandwidth
+    -> Example: Server has 100 DB Connections and attackers occupied all 100 and real user get 0 connections This is called starvation.
+
+=> Benefits of Rate Limiting
+    -> Prevent Resource Starvation: Rate limiting helps prevent resource starvation caused by Denial of Service (DoS) attacks.
+                                    Almost all APIs published by large tech companies enforce some form of rate limiting.
+                                    For example, Twitter limits the number of tweets to 300 per 3 hours
+                                    Google docs APIs limit read requests to 300 per user per 60 seconds.
+                                    A rate limiter prevents DoS attacks, either intentional or unintentional, by rejecting the excess calls.
+    -> Reduce cost:
+        -> Rate limiting helps control costs by preventing excessive use of system resources.
+            -> If too many requests hit a service at the same time, the system may need: More servers, More memory, More database connections. All of this increases infrastructure cost.
+            -> By limiting how many requests are allowed, rate limiting avoids unnecessary scaling and keeps costs under control.
+        -> Outbound / Third-Party API Example
+            -> Rate limiting is especially important when a service calls paid third-party APIs.
+            -> Many external services charge per request, such as:
+                -> Credit score checks
+                -> Payment gateways
+                -> Health record services
+                -> SMS / Email providers
+            -> If too many API calls are made, bill increase quickly.
+        -> Rate limiting prevents excessive usage of resources and paid APIs, helping avoid extra infrastructure and third-party costs.
+
+    -> Prevent servers from being overloaded.
+        -> While rate limiting is vital in preventing DoS attacks, it also plays a pivotal role in general load balancing and service quality maintenance.
+        -> High volumes of requests, not only from malicious sources but also from heavy usage, can overburden servers.
+        -> To reduce server load, a rate limiter is used to reject excess requests early in the request lifecycle made by malicious bots or users with heavy usage.
+
+=> Core Concepts of Rate Limiting: Most rate-limiting systems are built using three basic concepts: Limit, Window, and Identifier
+    -> Limit(How many requests are allowed): Limit defines the maximum number of requests that are allowed. Example: 100 or 10 or 1000
+    -> Window(In what time period): Window defines the time duration during which the limit is applied. Example: Per sec, Per min, Per hr, Per day
+    -> Identifier(Who is being limited): Identifier defines who the limit applies to. It can be IP address, User ID, API key, Device ID, Account ID
+    -> Important: Rate limiting always follows this structure: "Allow LIMIT requests per WINDOW for each IDENTIFIER"
+        -> Example:
+            -> Each IP can make 100 requests per minute(Limit: 100 requests, Window: 1 min, Identifier: IP address)
+            -> Each user can make 1000 requests per hour(Limit: 1000 requests, Window: 1 hr, Identifier: User ID)
+
+=> Type of Rate Limiting Response:
+    -> When a client sends too many requests, the system must decide how to respond. Most rate-limiting responses fall into three main categories: Blocking, Throttling, and Shaping
+        -> Blocking(Stop the request immediately): Blocking means extra request rejected completely once the limit is exceeded. What happens:
+            -> Request is not processed
+            -> Client gets an error (usually HTTP 429 – Too Many Requests)
+            -> Client must wait for the next window
+            -> Example:
+                -> Limit: 100 requests per minute
+                -> Client sends 101st request
+                -> Result: ❌ Request blocked
+                -> Best  used when security is important and preventing abuse or DoS attack.
+
+        -> Throttling(Slow down the client): Throttling means: Requests are not rejected, but are slowed down. What happens:
+            -> Requests are delayed
+            -> Client experiences higher response time
+            -> System stays stable
+            -> Example: Client sends too many requests, server processes them at a slower rate
+            -> Best used when burst traffic is allowed but controlled, User experience should degrade gracefully
+
+        -> Shaping(Control the traffic flow):
+            -> Traffic shaping means request are smoothed out over time instead of arriving in bursts. What happens:
+                -> Requests are queued
+                -> Sudden spikes are flattened
+                -> Traffic becomes steady and predictable
+            -> Example: 100 requests arrive at once and System processes 10 requests per second
+            -> Best Used when Backend systems are sensitive to spikes and Consistent throughput is required and Streaming or batch systems
+
+=> Common Rate Limiting Algorithms: Rate limiting can be implemented using different algorithms. Each of them has distinct pros and cons.
+    -> Fixed Window Counter: Count how many requests come in a fixed time window, and block requests once the limit is exceeded.
+        -> When a system receives too many requests, CPU, memory, DB connections get exhausted and becomes slow or unavailable. So, the simplest idea is:
+            -> “Let’s allow only a fixed number of requests in a fixed time period.” That idea is Fixed Window Counter.
+        -> How It Works (Step by Step):
+            -> Time is divided into fixed windows: Example: every 1 minute
+            -> For each window: maintain a counter
+            -> For every incoming request, increment the counter and if counter>limit -> reject request
+            -> When the window ends, counter is reset to zero.
+            -> Example:
+                -> Configuration:
+                    -> Limit: 100 requests
+                    -> Window: 1 min
+                    -> Identifier: USER ID
+                -> Timeline:
+                    -> 12:00:00 – 12:00:59  → Window 1
+                    -> 12:01:00 – 12:01:59  → Window 2
+                -> User sends 100 requests in Window 1 → ✅ allowed
+                -> 101st request in Window 1 → ❌ blocked
+                -> At 12:01:00 → counter resets
+                -> User can again send 100 requests → ✅
+            -> Implementation: FixedWindowRateLimiter
+            -> Advantage:
+                -> Very simple to understand
+                -> Easy to implement
+                -> Low memory usage
+                -> Works well for low traffic systems
+            -> Major Problem:
+                -> A client can abuse the window boundary. For Example: 100 requests at 12:00:59 and 100 requests at 12:01:01. So, total 200 requests in 2 seconds
+                -> This creates traffic spikes, resource overload and unfair usage.
+            -> When to use this?
+                -> Use fix window counter when traffic is low, precision is not critical and Simplicity is more important than accuracy.
+    -> Sliding Window Log
+        -> Problem in Fixed Window Counter: In Fixed Window Counter, the time is divided into fixed intervals (for example, 1 minute).
+           All requests inside that window are counted, and once the window ends, the counter resets to zero.
+           This reset happens suddenly at the boundary of the window. Because of this, a client can send Many requests at the end of one window And many requests again at the start of the next window
+           Even though the rate limit is respected per window, the system experiences a burst of traffic in a very short time.
+           The burst can overload the server, consume excessive resources and affect other users.
+           To solve this boundary spike issue, sliding window log was introduced.
+
+        -> Core Idea of Sliding Window Log: Instead of dividing time into fixed windows, always look at the last N seconds from the current moment. This means:
+            -> The window slides continuously and there is no sudden reset and every request is evaluated based on recent history.
+            -> For each user (or IP, API key, etc.), the system maintains a log of timestamps.
+            -> Each timestamp represents the time at which a request was made.
+            -> When a new request arrives, the system performs three steps:
+                -> Remove old requests.
+                    -> Any request that happened earlier than "currentTime - windowSize" is removed from the log.
+                -> Count remaining requests
+                    -> The remaining timestamps represent requests made within the sliding window.
+                -> Allow or reject the request
+                    -> If the count is less than the limit → allow the request
+                    -> If the count has reached the limit → reject the request
+                -> If the request is allowed, its timestamp is added to the log.
+            -> How This Solves the Boundary Problem
+                -> In Sliding Window Log:
+                    -> There is no fixed boundary
+                    -> Requests are always evaluated relative to current time
+                    -> Bursts near window edges are naturally controlled
+            -> Implementation: SlidingWindowLogRateLimiter
+            -> Advantages of Sliding Window Log:
+                -> Very accurate rate limiting
+                -> Completely removes boundary spikes
+                -> Fair to all users
+                -> Easy to understand conceptually
+            -> Major Drawback (Why We Don’t Use It Everywhere): The biggest problem with Sliding Window Log is memory usage.
+                -> One timestamp is stored per request
+                -> High traffic users generate huge logs
+                -> Cleaning old timestamps is expensive
+                -> In systems with: Millions of users, High QPS (queries per second) this approach becomes slow and memory-intensive.
+            -> When Sliding Window Log Is a Good Choice
+                -> Use Sliding Window Log when:
+                    -> Traffic is low or moderate
+                    -> Accuracy is more important than performance
+                    -> You want very strict rate enforcement
+
+    -> Sliding Window Counter: This algorithm exists only because Sliding Window Log was too expensive. Sliding Window Log solved the boundary problem of Fixed Window Counter, but it introduced a new problem.
+        -> Problem with Sliding Window Log
+            -> Stores one timestamp per request
+            -> High traffic → huge memory usage
+            -> Frequent cleanup of timestamps
+            -> Not suitable for large-scale systems
+            -> Engineers wanted: Sliding behavior (no boundary spikes) + Much lower memory usage. This requirement led to Sliding Window Counter.
+        -> Core Idea of Sliding Window Counter: Instead of storing every request timestamp, we store:
+            -> Request count of the current window
+            -> Request count of the previous window
+            -> Then we calculate a weighted average to estimate how many requests happened in the last window duration. This gives us: Approximate sliding behaviour with very low memory usage and good performance.
+        -> How Sliding Window Counter Works (Conceptually)
+            -> Assume window_size = 1 min. At any moment, the sliding window overlaps: A portion of previous window and A portion of current window.
+            -> The algorithm estimates request count using this formula:
+                effectiveCount = previousWindowCount * previousWindowWeight + currentWindowCount
+                where previousWindowWeight =  (windowSize - elapsedTimeInCurrentWindow) / windowSize
+        -> Implementation: SlidingWindowCounterRateLimiter
+        -> Advantages of Sliding Window Counter
+            -> Much less memory than Sliding Window Log
+            -> No fixed boundary spikes
+            -> High throughput
+            -> Widely used in real systems
+    -> Token Bucket: Earlier algorithms had issues:
+                | Algorithm              | Problem                |
+                | ---------------------- | ---------------------- |
+                | Fixed Window           | Boundary burst problem |
+                | Sliding Window Log     | High memory usage      |
+                | Sliding Window Counter | Approximate, not exact |
+        -> But real system needs smooth rate limiting, burst handling, constant memory and high throughput. Token bucket solves all of these.
+        -> Imagine a bucket  has token and each token allows 1 request.
+        -> Rules:
+            -> Token are added at a fixed rate
+            -> Bucket has a maximum capacity
+            -> Each request consumes 1 token
+                -> If token exists → execute immediately
+                -> Token is consumed
+                -> No queueing
+            -> If no token → request blocked
+            -> So, when a burst arrives: 5 token available-->5 request arrive-->All 5 EXECUTE immediately--> Tokens become 0--> After that New requests wait for token refill-> until then request become rejected/throttled
+        -> Core concept:
+            -> Parameter:
+                -> capacity = maximum tokens in bucket
+                -> refillRate = tokens added per second
+            -> state:
+                -> currentTokens
+                -> lastRefillTimestamp
+            -> Logic:
+                -> Refill tokens based on elapsed time
+                -> Cap tokens at capacity
+                -> Allow request only if token available
+            -> Why Token Bucket Allows Bursts
+                -> If System was idle and bucket become full, then sudden burst can consume all token at once. This is desired behavior in APIs.
+            -> Where Token Bucket Is Used
+                -> API Gateways
+                -> AWS API Gateway
+                -> NGINX
+                -> Envoy
+                -> Stripe / GitHub APIs
+            -> Implementation: TokenBucketRateLimiter
+    -> Leaky Bucket: Token Bucket allows bursts. That is good for APIs, but not always desirable.
+        -> Some system require smooth output rate, predictable traffic, no sudden spikes. For example: Payment processing, Message queue, Database writes, Downstream legacy systems. For these burst are dangerous.
+        -> Leaky Bucket was introduced to enforce a constant rate.
+        -> Imagine If bucket overflows → incoming water is rejected but Output is smooth and steady. This is exactly how the algorithm works.
+        -> Core Idea:
+            -> Requests are treated as water
+            -> Bucket has fixed capacity
+            -> Requests enter bucket immediately
+            -> Requests leave bucket at constant rate
+        -> Key Difference From Token Bucket
+                   | Token Bucket   | Leaky Bucket                  |
+                   | -------------- | ----------------------------- |
+                   | Controls input | Controls output               |
+                   | Allows bursts  | Smooths bursts                |
+                   | Good for APIs  | Good for processing pipelines |
+        -> Implementation: LeakyBucketRateLimiter
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
