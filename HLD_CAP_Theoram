@@ -1,0 +1,74 @@
+=> Definition: CAP Theorem states that in the presence of a network partition, a distributed system can guarantee either Consistency or Availability, but not both. It is impossible to simultaneously guarantee all three of the following properties:
+        -> C: Consistency
+        -> A: Availability
+        -> P: Partition Tolerance
+    -> You can only fully guarantee at most two of them at the same time. Let's understand this with example:
+    -> Assume your bank has 2 different server server A(Mumbai) and server B(Delhi) and data is replicated between them.
+                          Client
+                            |
+                     -----------------
+                     |               |
+                 Server A  <------> Server B
+                     (Balance = ₹1000)
+
+    -> Consistency: All clients see the same latest data at the same time. You deposited 500 at Mumbai(Client → Server A).
+                    After update Server A balance = ₹1500 & Server B balance = ₹1500
+                    You can read from any server (Client → Server A → ₹1500 ✅, Client → Server B → ₹1500 ✅)
+                            Client
+                              |
+                            Server A (₹1500)  <---->  Server B (₹1500)
+                                    (perfect sync)
+                    Without any delay update happens and this is called consistency.
+
+    -> AVAILABILITY: It means every request get a response, no matter whether it is updated data or not server should be available.
+                     For example in above case if server B is slow or overloaded, client might get older data i.e. 1000 not updated data i.e. 1500
+                     So, client get response but data may not be latest and this is called availability.
+
+    -> PARTITION TOLERANCE: System continues to work even when servers can’t communicate. It means network failure happen between the server but both server are up.
+                            Now CAP decision happens, system must choose either availability or consistency.
+                            -> Case 1️⃣: Partition + Consistency (CP System)
+                                -> When a network partition occurs, a CP system prioritizes consistency by rejecting requests that cannot guarantee the latest data. The system sacrifices availability to maintain correctness.
+                                                Network Partition Occurs
+                                                ------------------------
+
+                                                Server A   ❌❌❌   Server B
+
+
+                                                Client → Server B
+                                                           |
+                                                      ❌ Reject / Timeout
+
+                            -> Case 2️⃣: Partition + Availability (AP System)
+                                -> When a network partition occurs, an AP system prioritizes availability by serving requests using local data, even if the data may be stale.
+                                                Network Partition Occurs
+                                                ------------------------
+
+                                                Server A   ❌❌❌   Server B
+
+
+                                                Client → Server B
+                                                           |
+                                                      ✅ Respond (Local Data)
+                                                      ❌ May be stale
+
+
+=> The Core Truth of CAP Theorem: When a network partition occurs, you must choose
+        -> Consistency (CP) → Reject some requests
+        -> Availability (AP) → Serve stale / conflicting data
+    You can't have both.
+
+=> Type of CAP System
+    -> CP System (Consistency + Partition Tolerance): Chooses correctness over availability. If partition occurs, System may reject requests or return error/timeout
+            -> Example: HBase, MongoDB (with majority writes), Zookeeper
+            -> Used When: Banking, Payments, Inventory Count, Critical Correctness
+
+    -> AP System (Availability + Partition Tolerance): Chooses availability over consistency. If partition occurs, System serves data and may be stale or eventually consistent
+            -> Example: Cassandra, DynamoDB, CouchDB
+            -> Used When: Social media feeds, Like/Comments, Product catalog, Analytics
+
+    -> CA System (Consistency + Availability): Not possible in real distributed systems
+            -> Because without partition tolerance the system fails as soon as network breaks.
+            -> Works only in single node systems and non-distributed databases.
+            -> So, When partition happens, system must choose between C or A.
+
+=> In a distributed system, network partitions are unavoidable. During a partition, a system must choose between consistency and availability. The choice depends on business requirements.

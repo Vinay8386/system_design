@@ -1,0 +1,282 @@
+=> What is a Network Protocol
+    -> When two computers communicate, they are not “talking” in English or any human language. They are sending electrical signals or radio waves that represent 0s and 1s.
+    -> By themselves, these bits are meaningless. For communication to make sense, both computers must already agree on how to interpret those bits.
+    -> A network protocol is that agreement. It defines things like:
+        -> When communication should start
+        -> How data should be broken into pieces
+        -> How the receiver knows which piece comes first
+        -> What to do if some data is lost
+        -> How communication should end
+    -> Without a protocol, two systems may send and receive data, but they will not understand each other reliably. Think of a protocol as a rulebook for communication, not just a format.
+
+=> Why Protocols Are Necessary
+    -> Imagine you are on a phone call, and both people speak at the same time, interrupt each other, and never confirm whether the other person heard correctly. The conversation would fail.
+    -> The internet faces the same problem, but at a much larger scale: Millions of devices, Different hardware, Different speeds, Unreliable networks
+
+=> Why Protocols Are Layered
+    -> Instead of creating one massive rulebook, networking is divided into layers, where each layer solves one problem well. Each layer trusts the layer below it and serves the layer above it.
+    -> There are two models to explain networking. OSI is a 7-layer conceptual model used for learning, while TCP/IP is a 4-layer practical model used by the internet.
+    -> They describe the same process; TCP/IP simply merges some OSI layers together.
+
+                        OSI Model (7 layers)        TCP/IP Model (4 layers)
+                        --------------------------------------------------
+                        7. Application        ┐
+                        6. Presentation       ├── Application
+                        5. Session            ┘
+
+                        4. Transport          ─── Transport
+
+                        3. Network            ─── Internet
+
+                        2. Data Link          ┐
+                        1. Physical           ┘── Network Access
+
+
+=> TCP & UDP
+    -> TCP(Transmission Control Protocol/Transport Layer): TCP exists because the internet is unreliable. Data packets can be lost, duplicated, or arrive in the wrong order. TCP solves this problem by creating a reliable communication channel between two systems. This means:
+        -> Before sending data, TCP establishes a connection. During this setup, both sides agree on how they will track data, acknowledge received packets, and control the flow.
+        -> Once the connection is established, TCP ensures that:
+            -> All data reaches the destination
+            -> Data is delivered in the correct order
+            -> Missing data is retransmitted
+        -> This reliability comes at a cost. TCP is slower than simpler protocols because it constantly checks and verifies delivery.
+        -> That is why TCP is used for things like APIs, databases, and file transfers, where correctness matters more than speed.
+        -> How TCP Works (Conceptual)
+            -> Connection setup (3-way handshake)
+            -> Data transfer
+            -> Connection termination
+        -> Examples of TCP-based Applications
+            -> HTTP / HTTPS
+            -> Databases (MySQL, PostgreSQL)
+            -> File transfer
+            -> APIs
+        -> Why TCP at Layer-4 Load Balancer?
+            -> A Layer-4 LB:
+                -> Sees TCP connections
+                -> Routes based on:
+                    -> Source IP
+                    -> Destination IP
+                    -> Source port
+                    -> Destination port
+                -> It does not inspect HTTP content, only manages connections.
+    -> UDP(User Datagram Protocol/Transport Layer)
+        -> UDP takes the opposite approach. It assumes that speed is more important than reliability.
+        -> UDP sends data without setting up a connection and without waiting for acknowledgments. This means:
+            -> Some packets may be lost
+            -> Packets may arrive out of order
+            -> No retransmissions occur
+        -> This sounds dangerous, but for some applications, it is actually the correct choice. In video streaming or online games, losing one packet is better than waiting for retransmission and causing delay.
+        -> UDP is a connectionless and unreliable protocol. This means:
+            -> No connection setup
+            -> No delivery guarantee
+            -> No packet ordering
+        -> How UDP Works
+            -> Data is sent directly
+            -> No handshake
+            -> No acknowledgement
+        -> Examples of UDP-based Applications
+            -> Video streaming
+            -> Online gaming
+            -> VoIP calls
+            -> DNS queries
+
+=> Practical Model Used on the Internet (TCP/IP)
+    -> In real systems, the internet follows the TCP/IP model. At a high level, this model can be understood as four layers.
+        -> Application layer
+            -> This is where applications like browsers, mobile apps, and APIs live. Protocols here define what the data means. For example, HTTP defines requests, responses, headers, and status codes.
+            -> Application Layer does NOT mean UI or browser only. It also means, Protocols that solve user-level problems
+        -> Transport layer
+            -> This layer decides how data moves between two systems. TCP and UDP live here. This layer does not care whether the data is a video or a payment request.
+        -> Internet layer
+            -> This layer decides where the data should go. It handles addressing and routing across networks.
+        -> Network access layer
+            -> This layer handles how data is physically sent, such as through Ethernet or Wi-Fi.
+
+=> Realtime Flow:
+    -> Suppose you type this in browser: https://www.google.com
+        -> Step 1: DNS – “Find the server IP”
+            -> Humans understand names like google.com
+            -> Machines understand only IP addresses like 142.250.183.14
+            -> Your browser asks: "What is the IP address of www.google.com?". This message follows DNS protocol rules. This request goes to a DNS server.
+            -> DNS is an application-layer protocol whose job is to translate human-readable domain names into machine-readable IP addresses.
+            -> The DNS server responds with the IP address of the requested domain, which is then used for further communication.
+            -> Here protocol involved in this step is: OSI: Layer 7 (Application), TCP/IP: Application layer
+
+        -> Step 2: TCP – “Create a reliable connection”
+            -> Before sending actual data, browser says: “Let’s first establish a reliable connection”
+            -> TCP performs 3-way handshake: SYN, SYN-ACK, ACK
+            -> Now both client and server agree: connection is established and data transfer can begin
+            -> Here protocol involved in this step is: OSI: Layer 4 (Transport), TCP/IP: Transport layer
+
+        -> Step 3: TLS – “Secure the communication”
+            -> After TCP connection, TLS handshake happens and encryption key are exchanged and secure tunnel is created. Now even if someone intercepts data, they see garbage.
+            -> Here protocol involved in this step is: OSI: Layer 6 (Presentation), TCP/IP: Application layer (merged here)
+            -> Important point: TLS is logically above TCP but below HTTP
+
+        -> Step 4: HTTP – “Define request and response”
+            -> Browser sends: GET / HTTP/1.1   Host: www.google.com
+                -> HTTP Defines:
+                    -> request methods (GET, POST)
+                    -> status codes (200, 404)
+                    -> headers
+                    -> body
+            -> Server respond: 200 OK HTML content...
+            -> Here protocol involved in this step is: OSI: Layer 7 (Application), TCP/IP: Application layer
+
+        -> Step 5: IP – “Route data across the internet”
+            -> Each packet contain source IP, destination IP. Routers read destination IP and forward packet step by step.
+            -> Here protocol involved in this step is: OSI: Layer 3 (Network), TCP/IP: Internet layer
+
+        -> Step 6: Ethernet / Wi-Fi – “Send bits on wire”
+            -> Packet are converted into frames and electrical signals / radio waves
+            -> Here protocol involved in this step is: OSI: OSI: Layer 2 & 1, TCP/IP: Network Access layer
+
+=> Communication Model: It is a concept used at the application level, not a protocol and not a network layer. A communication model describes how applications communicate with each other and what roles the communicating parties play.
+    -> There are two communication model:
+        -> Client–server Model: The client–server model can be implemented in different ways, depending on how clients and servers interact.
+            -> Type 1: One-to-One (Single Client – Single Server): In this type, one client communicates with one server at a time.
+                -> The client send a request and wait for the server's response.
+                -> The server process the request and send back the response.
+                -> This is the simplest form of client server communication.
+                -> Example: A browser sending an HTTP request to a web server, An API client calling a REST API
+                -> Characteristics: Easy to understand and implement, Server can become a bottleneck if many clients connect
+                                +--------+        Request        +--------+
+                                | Client |  ------------------>  | Server |
+                                |        |  <------------------  |        |
+                                +--------+        Response       +--------+
+
+
+            -> Type 2: One-to-Many (Multiple Clients – Single Server)
+                -> Here, multiple clients communicate with the same server.
+                -> The server listen for request from many clients and handles them either sequentially of concurrently.
+                -> This is the most common real-world client–server setup.
+                -> Example: Thousands of users accessing the same website
+                                +--------+
+                                |Client1 |
+                                +--------+        |
+                                                  |
+                                +--------+        |        +--------+
+                                |Client2 |  ----->|----->  | Server |
+                                +--------+        |        +--------+
+                                                  |
+                                +--------+        |
+                                |Client3 |
+                                +--------+
+
+
+            -> Type 3: Client–Server with Load Balancing (Distributed Server)
+                -> In this type, clients still think they are talking to one server, but actually: Requests go to a load balancer
+                -> Load balancer forwards requests to multiple backend servers
+                -> From the client’s perspective, It is still client-server but the server side is distributed.
+                -> Example: Large-scale web applications (e-commerce, streaming services)
+                                            +----------------+
+                                +--------+  |                |   +---------+
+                                | Client |->| Load Balancer  |-->| Server 1 |
+                                +--------+  |                |   +---------+
+                                            |                |
+                                            |                |   +---------+
+                                            |                |-->| Server 2 |
+                                            +----------------+   +---------+
+
+
+            -> Type 4: Multi-Tier Client–Server (N-Tier Architecture)
+                -> Here, the server itself is divided into layers. Client(API server, Business logic service, Database)
+                -> Each tier had a specific responsibility and communicate using client-server style.
+                                +--------+
+                                | Client |
+                                +--------+
+                                     |
+                                     v
+                                +------------+
+                                | API Server |
+                                +------------+
+                                     |
+                                     v
+                                +----------------+
+                                | Business Layer |
+                                +----------------+
+                                     |
+                                     v
+                                +-----------+
+                                | Database  |
+                                +-----------+
+
+
+            -> Client–Server Model with Real Protocols
+                -> HTTP / HTTPS (Web)
+                    -> HTTP (Request–Response Model)
+                        Client (Browser)                     Server
+                             |                                  |
+                             |---- HTTP Request --------------->|
+                             |                                  |
+                             |<--- HTTP Response ---------------|
+                             |                                  |
+                             |---- HTTP Request --------------->|
+                             |                                  |
+                             |<--- HTTP Response ---------------|
+                             |                                  |
+
+                -> DNS
+                -> Email (SMTP, POP3, IMAP)
+                -> WebSocket(bi-directional and persistent.)
+                    -> WebSocket (Persistent Full-Duplex Model)
+                         Client (Browser)                     Server
+                              |                                  |
+                              |---- HTTP Handshake (Upgrade) --->|
+                              |<--- 101 Switching Protocols -----|
+                              |                                  |
+                              |==== Persistent WebSocket Conn ===|
+                              |<---- Message ------------------->|
+                              |<---- Message ------------------->|
+                              |<---- Message ------------------->|
+                              |                                  |
+
+
+        -> peer-to-peer Model: Peer-to-peer systems also have different types, based on how peers discover and communicate with each other.
+            -> Type 1: Pure Peer-to-Peer
+                -> In this there is no central server and all peers are equal and each peer can discover and communicate with other directly.
+                -> Example Early file-sharing system
+                -> Characteristics: Fully decentralized, No SPOF, Difficult peer discovery and coordination.
+                                +-------+ <----> +-------+
+                                | Peer1 | <----> | Peer2 |
+                                +-------+ <----> +-------+
+                                     ^        ↕        ^
+                                     |        ↕        |
+                                +-------+ <----> +-------+
+                                | Peer3 | <----> | Peer4 |
+                                +-------+ <----> +-------+
+
+
+            -> Type 2: Hybrid Peer-to-Peer
+                -> In this a central service is used for coordination, and actual data transfer happens directly between peers.
+                -> The central server may maintain a list of peers and hep with discovery.
+                -> Example: Torrent tracker
+                -> Characteristics: Partial dependency on central components
+                                           +----------------+
+                                           | Tracker /      |
+                                           | Discovery Svc  |
+                                           +----------------+
+                                                ↑     ↑
+                                                |     |
+                                     +-------+  |     |  +-------+
+                                     | Peer1 |<---------->| Peer2 |
+                                     +-------+            +-------+
+                                           ↕                  ↕
+                                        +-------+ <------> +-------+
+                                        | Peer3 | <------> | Peer4 |
+                                        +-------+          +-------+
+
+
+            -> Type 3: Structured Peer-to-Peer
+                -> In this peer follow a specific structure or algorithm
+                -> It often uses in Distributed Hash Table(DHT)
+                -> Example: Advanced file-sharing systems
+                -> Characteristics: Complex implementation
+
+            -> Type 4: Unstructured Peer-to-Peer
+                -> In this no fixed structure and peer connected randomly and searches may involve broadcasting queries.
+
+            -> Peer-to-Peer Model with Real Protocols
+                -> BitTorrent
+                -> Blockchain Networks
+                -> WebRTC (Real-Time Communication)

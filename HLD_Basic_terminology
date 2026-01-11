@@ -292,45 +292,6 @@
             -> Sticky sessions are required
             -> Load distribution becomes uneven
 
-=> TCP & UDP
-    -> TCP(Transmission Control Protocol): TCP is a connection-oriented and reliable protocol. This means:
-        -> A connection is established before data transfer
-        -> Data delivery is guaranteed
-        -> Order of packets is maintained
-        -> How TCP Works (Conceptual)
-            -> Connection setup (3-way handshake)
-            -> Data transfer
-            -> Connection termination
-        -> Examples of TCP-based Applications
-            -> HTTP / HTTPS
-            -> Databases (MySQL, PostgreSQL)
-            -> File transfer
-            -> APIs
-        -> Why TCP at Layer-4 Load Balancer?
-            -> A Layer-4 LB:
-                -> Sees TCP connections
-                -> Routes based on:
-                    -> Source IP
-                    -> Destination IP
-                    -> Source port
-                    -> Destination port
-                -> It does not inspect HTTP content, only manages connections.
-    -> UDP(User Datagram Protocol)
-        -> UDP is a connectionless and unreliable protocol. This means:
-            -> No connection setup
-            -> No delivery guarantee
-            -> No packet ordering
-        -> How UDP Works
-            -> Data is sent directly
-            -> No handshake
-            -> No acknowledgement
-        -> Examples of UDP-based Applications
-            -> Video streaming
-            -> Online gaming
-            -> VoIP calls
-            -> DNS queries
-
-
 => DNS(Domain Name Server): DNS (Domain Name System) is a distributed naming system that translates human-readable domain names into machine-readable IP addresses.
                             For Example: DNS converts a domain name like google.com into an IP address like 142.250.x.x.
                             Computers communicate using IP addresses, not domain names.
@@ -615,7 +576,7 @@
            A new database server will replace the old one.
         -> If master database goes offline, a slave database will be promoted to be the new master. All the database operations will be temporarily executed on the new master database.
             A new slave database will replace the old one for data replication immediately.
-             
+
 => Database Scaling: There are two broad approaches for database scaling.
     -> Vertical Scaling(Scaling-Up): In this, scaling will be done by adding more power(CPU, RAM, DISK...etc) to an existing machine. There are some powerful database server.
                                      According to Amazon RDS(Relational Database Service), you can get database server with 24 TB of RAM.

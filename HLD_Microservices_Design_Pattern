@@ -1,0 +1,231 @@
+=> Monolithic vs Microservices Architecture
+    -> What is Monolithic Architecture?
+        -> A monolithic application is built as one single unit, where all features are tightly coupled and deployed together.
+        -> For Example: E-commerce App
+            -> User Service
+            -> Product Service
+            -> Order Service
+            -> Payment Service
+            -> Notification Service
+        -> Example:
+                                Client
+                                   |
+                        -----------------------------
+                        |        Monolith App       |
+                        |  Users | Orders | Payment |
+                        |  Products | Notification  |
+                        -----------------------------
+                                    |
+                                Single DB
+
+        -> Advantage: Simple to develop, Easy deployment, Easy debugging, Performance
+        -> Disadvantages: Tight coupling, Poor scalability, Slower development at scale, Single point of failure
+
+    -> What is Microservices Architecture?
+        -> Microservices architecture breaks the application into small, independent services, each responsible for one business capability.
+        -> Same example:
+                                                  Client
+                                                    |
+                                                  API Gateway
+                                                    |
+                                    ------------------------------------------------
+                                    |   User   |  Product  |  Order  |  Payment   |
+                                    | Service  |  Service  | Service |  Service   |
+                                    ------------------------------------------------
+                                         |          |           |          |
+                                       User DB   Product DB   Order DB   Payment DB
+
+        -> Advantage:
+            -> Independent deployment: Deploy Order service without touching Payment
+            -> Independent scaling: Scale only high-traffic services
+            -> Fault isolation: Payment down ≠ whole system down
+            -> Technology flexibility: Java for Order, Node.js for Notification
+            -> Faster team productivity: Teams work independently
+
+        -> Disadvantages of Microservices
+            -> High Complexity: Network call, service discovery, load balancing
+            -> Distributed system problems: CAP theorem, Latency, Partial Failure
+            -> Data consistency issues: No single DB, Need Saga / Eventual consistency
+            -> Operational overhead: Monitoring, Logging, Tracing
+
+=> Types: There are 4 main type of Microservices Design Patterns
+    -> Decomposition Pattern: In this we will split/decompose our system into multiple services.
+        -> How we split a system into services
+            -> Decompose by Business Capability
+                -> Microservices should be decomposed by business capability, not by technical layers.
+                    -> For Example: E-commerce system: User Service, Order Service, Payment Service, Inventory Service
+                    -> Flow Diagram:
+                                Client
+                                  |
+                                Order Service → Payment Service → Inventory Service
+
+            -> Decompose by Subdomain (DDD - Domain-Driven Design)
+                -> Split services based on bounded contexts. For Example:
+                    -> Catalog Context → Product Service
+                    -> Sales Context → Order Service
+                    -> Billing Context → Payment Service
+                -> Important: Subdomain decomposition comes from Domain-Driven Design and focuses on domain boundaries.
+
+    -> Communication Pattern:
+        -> In a microservices architecture, services are independent processes, so they must communicate over the network.
+        -> Communication patterns define how this interaction is designed to ensure scalability, reliability, and maintainability.
+        -> Microservices communication patterns include API Gateway for client interaction, synchronous communication for immediate consistency, asynchronous communication for scalability and resilience, and service discovery for dynamic service location.
+            -> API Gateway Pattern: The API Gateway Pattern provides a single entry point for all client requests and routes them to appropriate backend microservices.
+                   -> Without API Gateway: When clients communicate directly with multiple microservices
+                        -> Clients must know the address of each service
+                        -> Clients may need to make multiple network calls
+                        -> Authentication, logging, and rate limiting are duplicated
+                        -> Any service change impacts the client
+                   -> This increases client-side complexity and tight coupling.
+                   -> With API Gateway:
+                        -> API Gateway act as facade that Handles routing, authentication, rate limiting and also Hides internal service structure from clients
+                                Client
+                                  |
+                                API Gateway
+                                  |
+                                ------------------------------
+                                | User | Order | Payment | ... |
+                                ------------------------------
+            -> Synchronous Communication Pattern (REST / gRPC): In synchronous communication, one service sends a request to another service and waits for the response before continuing.
+                -> Problem Statement: Some business flow require immediate response and strong consistency and sequential execution.
+                -> For Example: Order service must confirm payment before placing an order.
+                -> Solution: Service communicate using blocking protocol such as: REST(HTTP), gRPC
+                                Order Service
+                                      |
+                                      | (REST / gRPC call)
+                                      v
+                                Payment Service
+                                      |
+                                   Response
+                -> Synchronous communication is simple but tightly couples services and increases failure risk.
+
+            -> Asynchronous Communication Pattern (Event-Driven)
+                -> In asynchronous communication, services communicate by publishing events without waiting for immediate responses.
+                -> Synchronous calls cause high latency, cascading failure and reduced availability. Some systems can tolerate eventual consistency.
+                -> Solution: Use message brokers (Kafka, RabbitMQ) where Producer publishes events and Consumers react independently
+                                Order Service
+                                      |
+                                      | Publish Event
+                                      v
+                                 Message Broker (Kafka)
+                                      |
+                                ---------------------------
+                                | Payment | Inventory | Notification |
+                                ---------------------------
+                -> Asynchronous communication improves resilience and scalability at the cost of immediate consistency.
+
+            -> Service Discovery Pattern: The Service Discovery Pattern allows services to dynamically find the network location of other services.
+                -> In microservices, Services scale up/down dynamically, IP addresses change frequently, Hardcoding service locations is impossible
+                -> Solution: Use service Registery.
+
+    -> Data Management Pattern:
+        -> Microservices are independently deployable, so data ownership and consistency become major challenges.
+        -> Data management patterns address how services store, access, and synchronize data.
+            -> Database per Service Pattern:
+                -> The Database per Service Pattern states that each microservice must own its database, and no other service is allowed to access it directly.
+                -> Suppose multiple services share a single database:
+                    -> Schema changes impact multiple services
+                    -> Tight coupling is introduced
+                    -> Independent deployment is impossible
+                    -> One service failure can affect others
+                -> So, solution is Each microservice maintains its own private database, and data sharing happens only via APIs or events.
+                -> Database per service ensures loose coupling and independent evolution of microservices.
+
+        -> Saga Pattern: The Saga Pattern manages data consistency across multiple services by breaking a transaction into a sequence of local transactions.
+            -> In this Each service performs its local transaction and publishes an event. If a step fails, compensating transactions are executed and rollback done.
+            -> Saga provides data consistency in microservices without using distributed transactions.
+            -> Saga Type:
+                -> Choreography - services communicate via events
+                -> Orchestration - a central coordinator controls flow
+
+        -> CQRS (Command Query Responsibility Segregation): CQRS separates write operations (commands) from read operations (queries) into different models.
+            -> In CQRS, a command changes system state, while a query only reads data and does not modify it.
+            -> In traditional application design, the same data model is often used for both read and write operations.
+            -> As the system grows, this approach leads to several issues:
+                -> Read operations become complex due to business rules embedded in the write model
+                -> Write performance degrades because the model must also support heavy queries
+                -> Scaling becomes difficult since read and write workloads have different characteristics
+            -> This tight coupling of reads and writes limits performance, scalability, and maintainability.
+            -> Reason for the Problem:
+                -> Read and write operations have fundamentally different requirements:
+                    -> Writes require validation, business logic, and consistency
+                    -> Reads require fast, optimized data access
+                -> Using a single model forces one side to compromise for the other.
+            -> Solution:
+                -> CQRS addresses this problem by separating concerns:
+                    -> Command Model: Handles create, update, and delete operations. Focuses on business rules and data consistency
+                    -> Query Model: Handles read-only operations. Uses denormalized or optimized data structures for fast access
+            -> The two models can evolve independently and scale independently.
+                    Client
+                      |
+                    ---------------------------
+                    |                         |
+                    Command API            Query API
+                      |                         |
+                    Write Model            Read Model
+                      |                         |
+                    Write DB               Read DB
+
+
+    -> Resilience & operational patterns:
+        -> Resilience patterns prevent cascading failures at runtime, while operational patterns ensure safe deployment, monitoring, and recovery in production. Together, they enable systems to fail gracefully instead of catastrophically.
+        -> Resilience: In a distributed system or microservices architecture, failures are not exceptional events—they are normal and inevitable.
+                       Failures can happen due to:
+                            -> Network latency or packet loss
+                            -> Partial service outages
+                            -> Slow downstream dependencies
+                            -> Infrastructure issues (CPU spikes, GC pauses, node restarts)
+                       So, Resilience is the ability of a system to handle failures and still provide service instead of completely breaking.
+                       Resilience does not mean zero failure. It means controlled failure without cascading impact.
+
+        -> Why Resilience Patterns Are Required:
+            -> In a monolithic system, a failure usually stays within the same process. In microservices: Service A → Service B → Service C → Service D
+            -> If Service D slows down, then:
+                -> Threads in C get blocked
+                -> Thread pools in B fill up
+                -> Service A becomes unresponsive
+            -> This is called cascading failure.
+            -> Resilience patterns exist to:
+                -> Detect failures early
+                -> Isolate failures
+                -> Prevent failure propagation
+                -> Recover gracefully
+        -> Core Resilience Patterns
+            -> Circuit Breaker Pattern
+            -> Retry Pattern (With Backoff)
+            -> Timeout Pattern
+            -> Bulkhead Pattern
+            -> Rate Limiting (Protective Resilience)
+
+        -> Operational Patterns (Beyond Runtime Resilience)
+        -> Health Check Pattern
+        -> Monitoring & Observability Pattern
+        -> Graceful Degradation Pattern
+        -> Deployment Safety Patterns (Operational Resilience)
+        ->
+
+
+
+
+=> Interview Question:
+    -> Compare CQRS vs Normal CRUD
+    -> Explain CQRS with a real-world example
+    -> Show CQRS + Saga together
+    -> How Resilience & Operational Patterns Work Together
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
