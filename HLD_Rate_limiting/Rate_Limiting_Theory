@@ -11,8 +11,9 @@
     -> Legitimate users cannot access the service
     -> DoS does not need hacking the system. It simply floods the system with traffic
     -> For Example: Normal user → 5 requests/sec, Attacker → 50,000 requests/sec
+    -> Because  of DOS attack, there is very high chance of resource starvation.
 
-=> Resource Starvation: Resource starvation means Legitimate users do not get system resources because they are already consumed.
+=> Resource Starvation: Resource starvation means Legitimate(real)  users do not get system resources because they are already consumed.
     -> Resources include: CPU, Memory, DB Connection, Threads, Network bandwidth
     -> Example: Server has 100 DB Connections and attackers occupied all 100 and real user get 0 connections This is called starvation.
 
@@ -98,7 +99,7 @@
                 -> 101st request in Window 1 → ❌ blocked
                 -> At 12:01:00 → counter resets
                 -> User can again send 100 requests → ✅
-            -> Implementation: FixedWindowRateLimiter
+            -> Implementation: FixedWindowRateLimiter class
             -> Advantage:
                 -> Very simple to understand
                 -> Easy to implement
@@ -111,7 +112,7 @@
                 -> Use fix window counter when traffic is low, precision is not critical and Simplicity is more important than accuracy.
     -> Sliding Window Log
         -> Problem in Fixed Window Counter: In Fixed Window Counter, the time is divided into fixed intervals (for example, 1 minute).
-           All requests inside that window are counted, and once the window ends, the counter resets to zero.
+           All requests inside that window are counted, and once the window   , the counter resets to zero.
            This reset happens suddenly at the boundary of the window. Because of this, a client can send Many requests at the end of one window And many requests again at the start of the next window
            Even though the rate limit is respected per window, the system experiences a burst of traffic in a very short time.
            The burst can overload the server, consume excessive resources and affect other users.
@@ -183,7 +184,7 @@
         -> But real system needs smooth rate limiting, burst handling, constant memory and high throughput. Token bucket solves all of these.
         -> Imagine a bucket  has token and each token allows 1 request.
         -> Rules:
-            -> Token are added at a fixed rate
+            -> Token ar e added at a fixed rate
             -> Bucket has a maximum capacity
             -> Each request consumes 1 token
                 -> If token exists → execute immediately
@@ -228,8 +229,9 @@
                    | Good for APIs  | Good for processing pipelines |
         -> Implementation: LeakyBucketRateLimiter
 
+=> To run and test all type of Rate limiting : https://github.com/Vinay8386/POC/tree/main/Rate_Limiting_Service
 
-
+=> Where to implement rate-limiter(client-side/ server side/ gateway)?
 
 
 
