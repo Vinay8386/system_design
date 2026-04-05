@@ -231,8 +231,6 @@
 
 => To run and test all type of Rate limiting : https://github.com/Vinay8386/POC/tree/main/Rate_Limiting_Service
 
-=> Where to implement rate-limiter(client-side/ server side/ gateway)?
-
 
 
 

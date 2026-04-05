@@ -1,0 +1,384 @@
+=====================================================================! Proxy !=====================================================================================
+=> Proxy: A proxy is an intermediary server that acts as a middle layer between a client and a server, forwarding requests and responses, and optionally providing features like caching, security, anonymity, and traffic control.
+          There are two types of proxy:
+            -> Forward Proxy (Client-side): It hided the client identity. Example: VPN, Corporate network proxy
+            -> Reverse Proxy (Server-side): It Protect server. Example: Load balancer, API Gateway
+
+======================================================================! MIME !=====================================================================================
+=> MIME(Multipurpose Internet Mail Extensions):
+    -> A media type formerly known as a MIME types, indicates the nature and format of a document, file, or assortment of bytes.
+    -> The Internet Assigned Numbers Authority (IANA) is responsible for all official MIME types, and you can find the most up-to-date and complete list at their Media Types page.
+    -> Structure of a MIME type
+        -> A MIME type most commonly consists of just two parts: a type and a subtype, separated by a slash (/) — with no whitespace between: type/subtype
+            -> type: The type represents the general category into which the data type falls, such as video or text.
+            -> subtype: The subtype identifies the exact kind of data of the specified type the MIME type represents.
+            -> Each type has its own set of possible subtypes. A MIME type always has both a type and a subtype, never just one or the other.
+            -> An optional parameter can be added to provide additional details: type/subtype;parameter=value
+            -> Example: text/plain;charset=UTF-8 (add the optional charset parameter to specify the character set used for the characters in the data)
+            -> MIME types are case-insensitive but are traditionally written in lowercase. The parameter values can be case-sensitive.
+
+    -> Document Type: There are two types of documents:
+        -> Discrete:
+            -> Discrete types are types which represent a single file or medium, such as a single text or music file, or a single video.
+            -> The discrete types(with example) currently registered with the IANA are:
+                -> application: application/pdf, application/octet-stream, application/pkcs8, application/zip
+                -> audio: audio/mpeg, audio/vorbis.....etc
+                -> font: font/woff, font/ttf, and font/otf.....etc
+                -> image: image/jpeg, image/png, and image/svg+xml.....etc
+                -> model: model/3mf and model/vrml.....etc
+                -> text: text/plain, text/csv, and text/html.....etc
+                -> video: video/mp4.....etc
+
+        -> Multipart:
+            -> A multipart type represents a document that's comprised of multiple component parts, each of which may have its own individual MIME type.
+            -> Or a multipart type may encapsulate multiple files being sent together in one transaction.
+            -> For example, multipart MIME types are used when attaching multiple files to an email.
+            -> There are two multipart types:
+                -> message: message/rfc822, message/partial.....etc
+                -> multipart: multipart/form-data, multipart/byteranges.....etc
+
+    -> Difference between Content-Type & Content-Disposition
+        -> Content-Type: What kind of data it is
+        -> Content-Disposition: How to handle it (inline vs attachment)
+
+    -> Important MIME types for Web developers
+        -> application/octet-stream:
+            -> application/octet-stream is a MIME type used in HTTP to represent: "Unknown binary data"
+            -> As it means unknown binary file, browsers usually don't execute it, or even ask if it should be executed.
+            -> It tells the browser: "I don’t know what this file is — just treat it as raw data"
+            -> When the server doesn't know the exact file type or want to force download, It send Content-Type: application/octet-stream
+            -> Real Example:
+                -> Case 1: Known file type (Content-Type: image/png): Browser opens image directly
+                -> Case 2: Unknown binary(Content-Type: application/octet-stream): Browser downloads file instead of opening
+                -> Why browser behave this way:
+                    -> Imagine A .exe or malicious script is sent, Browser executes it automatically. That would be dangerous
+                    -> So, browser play safe and treat it as a download only.
+                -> Use case:
+                    -> When browser use it force file download even if file is pdf,Image,Text. You can force download by:
+                        Content-Type: application/octet-stream
+                        Content-Disposition: attachment; filename="file.pdf"
+                    -> File download APIs: In backend (e.g., Spring Boot):
+                        return ResponseEntity.ok()
+                            .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=data.bin")
+                            .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                            .body(fileBytes);
+
+        -> text/plain
+            -> This is the default for textual files. text/plain does not mean "any kind of textual data."
+            -> If you download a text/plain file from a <link> element declaring a CSS file, they will not recognize it as a valid CSS file if presented with text/plain.
+            -> The CSS mime type text/css must be used.
+
+        -> text/css:
+            -> CSS files used to style a Web page must be sent with text/css.
+            -> If a server doesn't recognize the .css suffix for CSS files, it may send them with text/plain or application/octet-stream MIME types.
+
+        -> text/html
+            -> All HTML content should be served with this type.
+            -> Alternative MIME types for XHTML (like application/xhtml+xml) are mostly useless nowadays.
+
+        -> text/javascript
+            -> JavaScript content should always be served with the MIME type text/javascript.
+
+        -> application/json
+            -> JavaScript Object Notation (JSON) is a standard text-based format for representing structured data based on JavaScript object syntax.
+            -> It is commonly used for transmitting data in web applications.
+
+        -> Image types
+            image/apng: Animated Portable Network Graphics (APNG)
+            image/avif : AV1 Image File Format (AVIF)
+            image/gif: Graphics Interchange Format (GIF)
+            image/jpeg: Joint Photographic Expert Group image (JPEG)
+            image/png: Portable Network Graphics (PNG)
+            image/svg+xml: Scalable Vector Graphics (SVG)
+            image/webp: Web Picture format (WEBP)
+
+        -> Audio and video types
+
+        -> multipart/form-data
+            -> The multipart/form-data type can be used when sending the values of a completed HTML Form from browser to server.
+            -> Example:
+                Content-Type: multipart/form-data; boundary=boundaryString
+                (other headers associated with the multipart document as a whole)
+
+                --boundaryString
+                Content-Disposition: form-data; name="myFile"; filename="img.jpg"
+                Content-Type: image/jpeg
+
+                (data)
+                --boundaryString
+                Content-Disposition: form-data; name="myField"
+
+                (data)
+                --boundaryString
+                (more subparts)
+                --boundaryString--
+
+    -> MIME sniffing:
+        -> It happen when a browser Ignores or doubts the Content-Type sent by the server and tries to guess the actual file type by inspecting the file’s content (bytes)
+        -> Why does MIME sniffing exist:
+            -> Because servers are not always correct. For example: Content-Type: text/plain but actual content will be:
+                <html>
+                  <script>alert("Hacked!")</script>
+                </html>
+            -> So, browser think This looks like HTML, not plain text. So it sniffs the content and may treat it as HTML.
+        -> How browsers guess (Sniffing logic)
+            -> Browser check File content (magic bytes) Example: %PDF → PDF, <html> → HTML, PK → ZIP
+            -> File extension (some browsers like Safari): .html, .js, .png
+            -> Context (how resource is used): Inside <script> tag?, Inside <img> tag?
+        -> Big Security Problem
+            -> Step 1: Server sends file as safe type Content-Type: text/plain
+            -> Step 2: But file actually contains JS: alert("Hacked!");
+            -> Step 3: Browser sniffs and executes it 😱: Now attacker can run malicious code (XSS attack)
+        -> Solution: Disable MIME Sniffing
+            -> Servers can tell browsers: "Do NOT guess — trust my Content-Type only". Use this header: X-Content-Type-Options: nosniff
+            -> Meaning: Browser will not sniff, strict follow content-type
+
+    -> Magic File Validation
+        -> Checking actual file content: Example:
+            | File Type | Magic Bytes   |
+            | --------- | ------------- |
+            | PNG       | `89 50 4E 47` |
+            | PDF       | `%PDF`        |
+            | JPG       | `FF D8 FF`    |
+        -> Magic numbers. The syntax of different formats allows file-type inference by looking at their byte structure.
+            -> For example:
+                -> GIF files start with the 47 49 46 38 39
+                -> hexadecimal value (GIF89),
+                -> PNG files with 89 50 4E 47 (.PNG).
+            -> Important: Not all file types have magic numbers, so this is not 100% reliable either.
+
+    -> MIME Spoofing
+        -> MIME spoofing is when an attacker fakes the MIME type (Content-Type) to trick the system or browser
+        -> It’s like lying about the file type. Example: Real file: "malicious.js" Pretending as: "image/png"
+        -> How it happens:
+            -> When a file is uploaded or sent, Attacker manipulates: Content-Type: image/png But actual file content: alert("Hacked!");
+            -> This is MIME spoofing. This is dangerous because system may trust the MIME type.
+        -> Attack Scenario (Real-world)
+            -> Step 1: Upload API trusts MIME type. Backend checks: Content-Type == image/png → allowed ✅
+            -> Step 2: Attacker uploads malicious file. MIME type → fake (image/png), Content → JavaScript / executable
+            -> Step 3: File is stored and served. later:
+                -> Browser load file
+                -> MIME sniffing happens and File executed ❌
+                -> Result: XSS attack, Malware execution, Data breach
+
+        -> How to Prevent MIME Spoofing
+            -> Never trust Content-Type: Treat it as user input (untrusted)
+            -> Use Magic File Validation (VERY IMPORTANT): Check actual file content, example: PNG → must start with: 89 50 4E 47
+            -> Set correct headers while serving: Content-Type: image/png, X-Content-Type-Options: nosniff
+            -> Restrict file execution: user_file.png → random_id_123.png
+            -> Validate file extension + content
+                -> Extension check ❌ alone is not enough
+                -> MIME check ❌ alone is not enough
+                -> Magic bytes ✅ must
+
+    -> MIME Spoofing vs MIME Sniffing
+        | Concept       | Meaning                          |
+        | ------------- | -------------------------------- |
+        | MIME Spoofing | Attacker lies about file type    |
+        | MIME Sniffing | Browser tries to guess real type |
+
+=====================================================! HTTP Caching !==============================================================
+
+=> HTTP Caching: Instead of calling server again and again, store response and reuse it.
+    -> Caching is important for Faster response (no network call), Reduced server load and Better scalability.
+    -> How caching works (basic flow)
+            -> In First Request, Browser sends request to server -> Server sends response -> Browser stores (caches) that response
+            -> In Second request:
+                -> Case 1: Cache is still valid (fresh)
+                    -> Browser uses cached response --> No request goes to server --> Very fast
+                -> Case 2: Cache is expired (stale)
+                    -> Browser asks server: “Has this data changed?”
+                    -> Server replies:
+                        -> No change → 304 Not Modified (use old cache)
+                        -> Changed → 200 OK (new data sent)
+    -> Types of Cache:
+        -> Private Cache (Browser)
+            -> It is stored in user's browser and used only by that user.
+            -> Example: Image, CSS, JS
+            -> If a response contains personalized content and you want to store the response only in the private cache, you must specify a private directive: Cache-Control: private
+        -> Shared Cache (Proxy / CDN)
+            -> It will be shared between the users. It stores between client and server.
+            -> Example: CDN like Cloudflare
+            -> Shared caches can be further sub-classified into proxy caches and managed caches.
+                -> Proxy caches:
+                    -> Proxy caches are intermediate caches not controlled by developers.
+                    -> To control proxy cache, developers use HTTP header: Cache-Control: no-store. It means telling the proxy not to cache the response.
+                    -> But the problem was proxies did not follow HTTP standards properly and ignored headers like: no-store, no-cache
+                    -> So, even if server sends Cache-Control: no-store, proxy may STILL cache it
+                    -> Proxy caches were problematic earlier due to poor implementations.
+                    -> Developers used “kitchen-sink headers” as workaround
+                        -> Developers used multiple directives:
+                            Cache-Control: no-store, no-cache, max-age=0, must-revalidate, proxy-revalidate
+                        -> It means don't cache this under any condition.
+                    -> Today most communication uses HTTPS (Modern Change (HTTPS Impact))
+                    -> HTTPS encrypts request and response which proxy cannot read because of encryption.
+                    -> So now modern proxies mostly act as tunnels, not caches
+                    -> On the other hand, if a TLS intercepting proxy decrypts all communications in a man-in-the-middle manner by installing a certificate from a CA (Certificate Authority) managed by the organization on the PC, it is possible to see the contents of the response and cache it.
+                    -> However, since CT (Certificate Transparency) has become widespread in recent years, and some browsers only allow certificates issued with an SCT (Signed Certificate Timestamp), this method requires the application of enterprise policy.
+                    -> In such a controlled environment, there is no need to worry about the proxy cache being "outdated and not updated".
+
+                -> Managed caches:
+                    -> Managed cache = Between client & server (but controlled by you). Example: CDN, Reverse proxy (Nginx, Varnish), Service Worker
+                    -> Managed caches are explicitly deployed by service developers to reduce load on origin server and deliver content efficiently.
+                    -> Examples include: reverse proxies, CDNs, and service workers (with Cache API)
+
+                    -> The behavior of managed caches depends on the product being used.
+                    -> In most cases, developers can control cache using:
+                        -> Cache-Control headers
+                        -> Configuration files or dashboards
+
+                    -> HTTP Caching specification does NOT provide a way to explicitly delete cache.
+                    -> But in managed caches, stored responses can be deleted anytime using:
+                        -> Dashboard operations
+                        -> API calls
+                        -> Restarting cache systems
+
+                    -> This allows a more proactive and controlled caching strategy.
+
+                    -> Managed caches can also ignore standard HTTP caching rules if needed.
+                    -> Example:
+                        Cache-Control: no-store
+                        -> Used to prevent browser/proxy caching
+                        -> But still allows caching in managed cache using custom logic
+
+                    -> Example implementations:
+                        -> Varnish Cache uses VCL (Varnish Configuration Language) to control caching logic
+                        -> Service Workers use JavaScript + Cache API to define custom caching behavior
+
+                    -> If a managed cache ignores no-store intentionally, it is NOT considered non-compliant
+                    -> Because developer has full control over caching behavior
+
+                    -> Best practice:
+                        -> Avoid using kitchen-sink headers
+                        -> Always follow documentation of the managed cache being used
+                        -> Configure caching properly using provided mechanisms
+
+                    -> Some CDNs provide their own custom headers (CDN-specific)
+                        -> Example: Surrogate-Control
+
+                    -> Standardization effort is ongoing:
+                        -> CDN-Cache-Control header is being defined to unify CDN caching behavior
+
+                -> Heuristic caching:
+                    -> HTTP is designed to cache as much as possible.
+                    -> Even if Cache-Control header is NOT provided, responses can still be cached.
+                    -> This is called heuristic caching.
+
+                    -> Heuristic caching means cache decision is made based on response metadata instead of explicit instructions.
+
+                    -> Example response:
+                        -> Contains Last-Modified header
+                        -> But does NOT contain Cache-Control
+
+                    -> In such cases, client estimates how long to cache the response.
+
+                    -> Logic:
+                        -> If content has not been updated for a long time, it is likely to remain unchanged.
+                        -> So response is cached and reused for some duration.
+
+                    -> Common approach (as per recommendation):
+                        -> Cache duration ≈ 10% of the time since last modification
+                        -> Example:
+                            -> Last modified 1 year ago
+                            -> Cache for ~0.1 year (~36 days)
+
+                    -> Important point:
+                        -> Duration is NOT fixed
+                        -> It depends on browser/client implementation
+
+                    -> Heuristic caching existed before Cache-Control was widely supported.
+
+                    -> It is considered a fallback mechanism.
+
+                    -> Best practice:
+                        -> Always explicitly define caching using Cache-Control header
+                        -> Avoid relying on heuristic caching
+        -> Important Point: Personalized data should NOT go to shared cache
+
+    -> Caching Layer:
+        -> There are 3 types of caching layers:
+            1. Browser Cache        (Client side)
+            2. Proxy/CDN Cache      (Network layer)
+            3. Application Cache    (Your control)
+
+        -> Application Cache: This is fully controlled by developer. Example: Hazelcast, Redis, Custom HashMap caching in Java, Spring Cache
+            -> Flow:
+                Client → Server → (Check Hazelcast Cache)
+                                    → Hit → Return
+                                    → Miss → DB → Store in cache → Return
+           -> Important Point: This is NOT HTTP caching
+           -> No Cache-Control, No browser/proxy involved, Pure backend logic
+           -> Application Cache vs Managed Cache:
+                | Feature           | Managed Cache        | Application Cache |
+                | ----------------- | -------------------- | ----------------- |
+                | Location          | Network layer        | Inside backend    |
+                | Example           | CDN, Varnish         | Hazelcast, Redis  |
+                | Control           | Config + headers     | Full code control |
+                | Uses HTTP headers | ✅ Yes                | ❌ No              |
+                | Purpose           | Reduce network calls | Reduce DB calls   |
+
+    -> Fresh vs Stale: This is the core of caching.
+        -> Fresh: The fresh state usually indicates that the response is still valid and can be reused.
+        -> Stale: The Stale state usually indicates that the cached response has already expired.
+        -> The criterion for determining when a response is fresh and when it is stale is age.
+        -> In HTTP, age is the time elapsed since the response was generated. This is similar to the TTL in other caching mechanisms.
+        -> The cache that stored the example response calculates the time elapsed since the response was generated and uses the result as the response's age.
+        -> For Example: Cache-Control: max-age=604800. Meaning of max-age is:
+            -> If the age of the response is less than one week, the response is fresh.
+            -> If the age of the response is more than one week, the response is stale.
+        -> When a response is stored in a shared cache, it is possible to tell the client the age of the response.
+        -> Continuing with the example, if the shared cache stored the response for one day, the shared cache would send the following response to subsequent client requests.
+            HTTP/1.1 200 OK
+            Content-Type: text/html
+            Content-Length: 1024
+            Date: Tue, 22 Feb 2022 22:22:22 GMT
+            Cache-Control: max-age=604800
+            Age: 86400
+
+            <!doctype html>
+            …
+        -> The client which receives that response will find it to be fresh for the remaining 518400 seconds, the difference between the response's max-age and Age.
+
+    -> How do we control caching:
+        -> We can control caching using HTTP headers. This header tells the browser how caching should behave.
+            -> max-age: Cache-Control: max-age=60 : It means cache is valid for 60 sec
+            -> no-cache: It means Cache can be stored but must check with server before using it.
+            -> no-store: It means don't store anything in cache
+            -> public: It means Can be cached by anyone (browser + CDN)
+            -> private: It means only browser can cache and not shared with other.
+
+    -> Validation (How browser checks with server)
+        -> When cache become stale, browser validate it using:
+            -> Last-Modified: Server send Last-Modified:  Wed, 01 Jan 2025, Browser sends back: If-Modified-Since: Wed, 01 Jan 2025
+            -> ETag (Better approach): Server send ETag: "abc123", Browser send If-None-Match: "abc123"
+            -> Server response:
+                -> If same → 304 Not Modified
+                -> If changed → 200 OK + new data
+
+        -> What happens if no caching header is present?
+            -> Browser tries to guess caching time based on: Last modified date. This is called heuristic caching. Not reliable → always define caching explicitly
+
+        -> Real World uses:
+            -> Static files (JS, CSS, images): Cache-Control: public, max-age=31536000 (Cache for long time)
+            -> Dynamic content (HTML, APIs): Cache-Control: no-cache (Always validate before use)
+            -> Sensitive data: Cache-Control: no-store (Do not cache)
+
+==========================================================! HTTP cookies !===============================================================
+
+=> Definition: A cookie (also known as a web cookie or browser cookie) is a small piece of data a server sends to a user's web browser.
+    -> The browser may store cookies, create new cookies, modify existing ones, and send them back to the same server with later requests.
+    -> Cookies enable web applications to store limited amounts of data and remember state information; by default the HTTP protocol is stateless.
+    -> What cookies are used for:
+        ->  determine whether different requests come from the same browser/user and then issue a personalized or generic response as appropriate.
+        -> The following describes a basic user sign-in system:
+            -> The user sends sign-in credentials to the server, for example via a form submission.
+            -> If the credentials are correct, the server updates the UI to indicate that the user is signed in, and responds with a cookie containing a session ID that records their sign-in status on the browser.
+            -> At a later time, the user moves to a different page on the same site. The browser sends the cookie containing the session ID along with the corresponding request to indicate that it still thinks the user is signed in.
+            -> The server checks the session ID and, if it is still valid, sends the user a personalized version of the new page. If it is not valid, the session ID is deleted and the user is shown a generic version of the page (or perhaps shown an "access denied" message and asked to sign in again).
+        -> Cookies are mainly used for three purposes:
+            -> Session management: User sign-in status, shopping cart contents, game scores, or any other user session-related details that the server needs to remember.
+            -> Personalization: User preferences such as display language and UI theme.
+            -> Tracking: Recording and analyzing user behavior.
+
+=============================================================! CORS !=====================================================================
+=>

@@ -566,7 +566,7 @@
         -> DNS Redundancy
         -> Multi-AZ / Multi-Region Deployment
 
-=> Database replication: It is used in many database management system, usually with a master slave relationship between the original(master) and copies(slaves).
+=> Database Replication: It is used in many database management system, usually with a master slave relationship between the original(master) and copies(slaves).
                          A master database generally only support write operation. A slave database get copies of data from master database and only support read operation.
                          All the data modifying commands like insert, delete or update must be sent to the master database. Most applications require a much higher ratio of reads to writes
                          This the number of slave database in a system is usually larger than the number of master databases.
@@ -630,5 +630,3 @@
                     -> Geo-Based Sharding (Geosharding): Data is partitioned based on the physical location of the user.
                         -> Example: European users' data is stored in a London data center; Asian users' data is in Singapore.
                         -> Pros: Massive reduction in latency (speed) and helps with local data privacy laws (like GDPR).
-
-

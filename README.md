@@ -77,3 +77,26 @@ Before diving into system design and architecture, it is important to understand
 - **Single Point of Failure (SPOF)** – Components that can cause total system failure
 - **Database Replication** – Copying data across multiple databases for availability
 - **Database Scaling** – Techniques to handle large volumes of data and traffic
+
+## HLD_Basic_Terminology
+
+This documents diving into below concept properly:
+
+-**Scaling**
+-**Stateful vs Stateless Application**
+-**Load Balancer**
+-**DNS(Domain Name Server)**
+-**CDN(Content Delivery Network)**
+-**Single Point of Failure (SPOF)**
+-**Database Replication**
+-**Database Scaling**
+
+## HLD_Basic_Documents
+
+This documents diving into below concept properly:
+
+-**Proxy**
+-**MIME(Multipurpose Internet Mail Extensions): MIME Sniffing, MIME Spoofing**
+-**Caching(HTTP Caching, Application Caching)**
+-**HTTP cookies**
+-**CORS**
