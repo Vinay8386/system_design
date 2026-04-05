@@ -82,21 +82,21 @@ Before diving into system design and architecture, it is important to understand
 
 This documents diving into below concept properly:
 
--**Scaling**
--**Stateful vs Stateless Application**
--**Load Balancer**
--**DNS(Domain Name Server)**
--**CDN(Content Delivery Network)**
--**Single Point of Failure (SPOF)**
--**Database Replication**
--**Database Scaling**
+- **Scaling**
+- **Stateful vs Stateless Application**
+- **Load Balancer**
+- **DNS(Domain Name Server)**
+- **CDN(Content Delivery Network)**
+- **Single Point of Failure (SPOF)**
+- **Database Replication**
+- **Database Scaling**
 
 ## HLD_Basic_Documents
 
 This documents diving into below concept properly:
 
--**Proxy**
--**MIME(Multipurpose Internet Mail Extensions): MIME Sniffing, MIME Spoofing**
--**Caching(HTTP Caching, Application Caching)**
--**HTTP cookies**
--**CORS**
+- **Proxy**
+- **MIME(Multipurpose Internet Mail Extensions): MIME Sniffing, MIME Spoofing**
+- **Caching(HTTP Caching, Application Caching)**
+- **HTTP cookies**
+- **CORS**
