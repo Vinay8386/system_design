@@ -381,4 +381,175 @@
             -> Tracking: Recording and analyzing user behavior.
 
 =============================================================! CORS !=====================================================================
-=>
+=> Cross-Origin Resource Sharing (CORS) is an HTTP-header based mechanism that allows a server to indicate any origins (domain, scheme, or port) other than its own from which a browser should permit loading resources.
+    -> CORS (Cross-Origin Resource Sharing) is a browser security mechanism.
+    -> It restricts requests made from one origin to another origin.
+    -> Example:
+                -> Frontend (https://domain-a.com) calls API (https://domain-b.com/data.json)
+    -> Browsers enforce security using Same-Origin Policy (SOP)
+            -> It restricts scripts from making requests to different origins
+    -> Same-Origin Policy means:
+            -> A web application can only access resources from the same origin (protocol + domain + port)
+    -> APIs like fetch() and XMLHttpRequest follow Same-Origin Policy
+    -> So by default:
+            -> Cross-origin requests are blocked by browser ❌
+    -> To allow cross-origin requests:
+            -> Server must send proper CORS headers like Access-Control-Allow-Origin
+    -> Browser responsibility:
+            -> Check CORS headers
+            -> Allow or block request based on server response
+    -> Important:
+            -> CORS is enforced by browser, NOT server
+            -> Server only sends headers, browser decides to allow/block
+    -> Purpose of CORS:
+            -> Enable controlled access between different origins
+            -> Prevent security risks of unauthorized cross-origin access
+    -> In some cases, browser does NOT send actual request directly.
+    -> Instead, it first sends a "preflight request".
+        -> Preflight request means: Browser asks server: "Is it allowed to send actual request?"
+    -> This preflight request uses HTTP method: OPTIONS
+    -> It contains header like:
+        -> Access-Control-Request-Method (which method will be used: GET/POST/PUT etc.)
+        ->  Access-Control-Request-Headers (custom headers if any)
+    -> Server responds with:
+        -> Access-Control-Allow-Origin
+        -> Access-Control-Allow-Methods
+        -> Access-Control-Allow-Headers
+    -> If server allows, browser send actual request
+    -> If server denies, Browser blocks the request (even if server is reachable)
+    -> Preflight request rule:
+        -> Preflight is NOT based only on HTTP method.
+        -> It depends on whether request is "simple" or "non-simple".
+
+        -> Simple request:
+            -> Methods: GET, POST, HEAD
+            -> Headers: Only standard headers (no custom headers)
+            -> Content-Type:
+                -> application/x-www-form-urlencoded
+                -> multipart/form-data
+                -> text/plain
+
+            -> In this case:
+                -> NO preflight request
+
+        -> Non-simple request:
+            -> Methods: PUT, DELETE, PATCH (always preflight)
+            -> OR using custom headers (e.g., Authorization)
+            -> OR Content-Type: application/json
+
+            -> In this case:
+                -> Browser WILL send preflight request (OPTIONS)
+
+    -> Some cross-origin requests do NOT trigger preflight request. These are called "simple requests".
+    -> Reason (Important Concept):
+            -> HTML <form> could already send requests to any origin (before CORS existed)
+            -> So servers were already designed to handle such risks (CSRF)
+            -> Therefore, browser allows similar requests without preflight
+    -> But still:
+            -> Server must allow response using CORS headers
+            -> Otherwise browser will block response
+    -> Simple Request:
+        -> A simple request is a request that satisfies ALL below conditions
+            -> 1. Allowed HTTP Methods: GET, HEAD, POST
+            -> 2. Allowed Request Headers (only these can be manually set):
+                -> Accept
+                -> Accept-Language
+                -> Content-Language
+                -> Content-Type
+                -> Range (with single value)
+            -> 3. Allowed Content-Type values:
+                -> application/x-www-form-urlencoded
+                -> multipart/form-data
+                -> text/plain
+                -> If Content-Type is application/json:
+                    -> NOT a simple request ❌
+                    -> Preflight will be triggered
+            -> 4. Additional Conditions:
+                -> No custom headers (e.g., Authorization ❌)
+                -> No XMLHttpRequest.upload event listeners
+                -> No ReadableStream used
+        -> Browser behavior: Sends request directly (no preflight)
+        -> Important Header in Request(Origin): It tells server from where request is coming
+        -> Example: Frontend: https://foo.example, API: https://bar.other
+            -> Browser send: Origin: https://foo.example
+            -> Server response: Must include Access-Control-Allow-Origin
+            -> Example: Access-Control-Allow-Origin: * (Allows all origins) or
+            -> Access-Control-Allow-Origin: https://foo.example (Allows only specific origin)
+        -> Important:
+            -> Even for simple request: Server must explicitly allow origin Otherwise browser blocks response ❌
+        -> Credential Case (Very Important):
+            -> If request includes credentials (cookies, auth): Server CANNOT use * and must specify exact origin
+            -> Example: Access-Control-Allow-Origin: https://foo.example
+
+    -> Preflighted Requests (Access Control Scenario)
+        -> Preflighted request means browser sends an initial request before actual request to check whether server allow request or not.
+        -> Preflight is triggered when request is "non-simple". Example condition:
+            -> Custom headers (e.g., X-PINGOTHER)
+            -> Non-standard Content-Type (e.g., text/xml, application/json)
+            -> Methods like PUT, DELETE, PATCH
+            -> Example: POST request with:
+                -> Content-Type: text/xml ❌
+                -> Custom header: X-PINGOTHER ❌
+                -> So this request is preflighted
+        -> Step 1: Preflight Request (OPTIONS)
+            -> Browser send OPTION request to server. Important header:
+                -> Origin
+                -> Access-Control-Request-Method (actual method, e.g., POST)
+                -> Access-Control-Request-Headers (custom headers)
+                -> Example:
+                    -> Access-Control-Request-Method: POST
+                    -> Access-Control-Request-Headers: content-type, x-pingother
+        -> Step 2: Server Response to Preflight
+            -> Server checks request and responds with permission
+            -> Important headers:
+                -> Access-Control-Allow-Origin (Which origin is allowed)
+                -> Access-Control-Allow-Methods (Allowed HTTP methods (POST, GET, etc.))
+                -> Access-Control-Allow-Headers (Allowed custom headers)
+                -> Access-Control-Max-Age (Time (in seconds) to cache preflight response, Example: 86400 (24 hours))
+        -> Step 3: Actual Request
+            -> If server allows: Browser sends actual request (POST)
+            -> Note: Actual request does NOT include Access-Control-Request-* headers
+        -> Step 4: Final Response
+            -> Server again sends: Access-Control-Allow-Origin
+            -> Browser checks and then allows response
+        -> Important: If preflight fails: Browser blocks request ❌ and Actual request is NOT sent
+
+    -> Preflighted Requests and Redirects:
+        -> In some browsers, redirects are NOT allowed after a preflighted request.
+        -> Problem:
+            -> If a preflight request (OPTIONS) is followed by a redirect
+            -> Browser may block the request ❌
+        -> Example Error:
+            -> "Request requires preflight, which is disallowed to follow cross-origin redirects"
+        -> Reason:
+            -> Earlier CORS specification did NOT allow redirects after preflight
+            -> Spec has been updated now to allow it
+            -> But some browsers still follow old behavior
+        -> So behavior is inconsistent across browsers ⚠️
+        -> Workarounds:
+            -> 1. Change server behavior:
+                -> Avoid redirect after preflight
+                -> OR avoid triggering preflight
+            -> 2. Convert request into simple request:
+                -> Use only simple methods (GET, POST, HEAD)
+                -> Avoid custom headers
+                -> Use allowed Content-Type
+            -> 3. Two-step workaround:
+                -> Step 1:
+                    -> Make a simple request
+                    -> Get final redirected URL using:
+                        -> fetch → Response.url
+                        -> XMLHttpRequest → responseURL
+                -> Step 2:
+                    -> Send actual request directly to that final URL
+        -> Limitation (Very Important):
+            -> If preflight is triggered due to Authorization header:
+                -> This workaround will NOT work ❌
+            -> In such cases:
+                -> Only solution is to fix server-side behavior
+        -> Key Takeaway:
+            -> Avoid redirects in preflighted requests
+            -> Prefer direct endpoints or simple requests when possible
+    -> Requests with credentials
+
+Doc: https://developer.mozilla.org/en-US/docs/Web/HTTP/Guides/CORS
