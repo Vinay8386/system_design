@@ -1,0 +1,563 @@
+=> Microservices Inter-Communication Complete Flow
+
+    -> Microservices need to communicate with each other to exchange data and perform business operations.
+
+    -> There are mainly 2 communication types:
+          1. Synchronous Communication
+          2. Asynchronous Communication
+
+================================================================================
+
+=> 1. Synchronous Communication
+
+    -> Definition
+          -> Service A sends request to Service B.
+          -> Service A waits until Service B returns response.
+          -> Communication is Blocking in nature.
+
+    -> Flow
+
+          Client
+             |
+             v
+         Service A
+             |
+             | Request
+             v
+         Service B
+             |
+             | Response
+             v
+         Service A
+
+    -> Characteristics
+          -> Request-Response model.
+          -> Blocking communication.
+          -> Caller waits for response.
+          -> Suitable when immediate response is required.
+
+    -> Common Tools
+          -> RestTemplate (Blocking by default)
+          -> WebClient + block() method
+
+    -> RestTemplate Example
+          -> Always synchronous.
+          -> Current thread waits for response.
+
+    -> WebClient Example
+          -> By default Non-Blocking.
+          -> If block() is used, it becomes Synchronous.
+
+    -> Example
+
+          User requests Account Summary
+
+          Service A (Account Service)
+                 |
+                 v
+          Service B (Transaction Service)
+
+          Service A waits for transaction details then returns final response.
+
+    -> Disadvantage
+
+          -> Tight Coupling
+
+          Service A -------> Service B
+
+          If Service B is down Service A may fail or become slow.
+
+================================================================================
+
+=> 2. Asynchronous Communication
+
+    -> Definition
+          -> Service A sends request/event.
+          -> Does NOT wait for response.
+          -> Processing happens independently.
+
+    -> Communication Types
+
+          1. One-to-One
+          2. One-to-Many
+
+================================================================================
+
+=> 2.1 Asynchronous One-to-One Communication
+
+    -> Flow
+
+          Service A
+               |
+               | Async Request
+               v
+          Service B
+
+    -> Characteristics
+
+          -> Direct communication.
+          -> No blocking.
+          -> Service A continues execution.
+          -> Response can be processed later.
+
+    -> Tool
+
+          -> WebClient
+
+    -> Why WebClient?
+
+          -> Non-blocking.
+          -> Reactive.
+          -> Better resource utilization.
+          -> Suitable for high concurrent requests.
+
+    -> Example
+
+          User uploads document.
+
+          Service A sends async request to Document Processing Service.
+
+          Service A continues processing without waiting.
+
+================================================================================
+
+=> 2.2 Asynchronous One-to-Many Communication
+
+    -> Requirement
+
+          -> One event should be consumed by multiple services.
+
+    -> Solution
+
+          -> Event-Driven Architecture
+
+================================================================================
+
+=> Event-Driven Architecture
+
+    -> Definition
+
+          -> Producer publishes event.
+          -> Multiple consumers receive event.
+          -> Services remain independent.
+
+    -> Flow
+
+                         Kafka Topic
+                              |
+                ------------------------------
+                |             |             |
+                v             v             v
+           Service B     Service C     Service D
+
+          Producer Service A
+                   |
+                   v
+             Publish Event
+
+    -> Real Example
+
+          Order Created Event
+
+          Service A (Order Service)
+                     |
+                     v
+                Kafka Topic
+                     |
+           ----------------------
+           |         |          |
+           v         v          v
+
+      Billing    Shipping   Notification
+      Service    Service     Service
+
+    -> Benefits
+
+          -> Loose Coupling
+          -> High Scalability
+          -> Better Fault Tolerance
+          -> Independent Deployment
+          -> Better Performance
+
+    -> Advantage over WebClient
+
+          WebClient
+
+          Service A -------> Service B
+
+          If Service B is down Request may fail.
+
+          Event-Driven
+
+          Service A --> Kafka --> Service B
+
+          If Service B is down Kafka stores messages. Service B can consume later.
+
+================================================================================
+
+=> Event-Driven Tools
+
+    -> Apache Kafka
+    -> RabbitMQ
+    -> Amazon SQS
+    -> ActiveMQ
+
+================================================================================
+
+=> Reactive Programming
+
+    -> Definition
+
+          -> Programming model designed to handle large number of concurrent requests efficiently.
+
+          -> Uses Non-Blocking I/O.
+
+          -> Threads are not wasted waiting for database/API response.
+
+================================================================================
+
+=> Spring Reactive Stack
+
+    -> Spring WebFlux
+
+          -> Reactive Web Framework.
+
+    -> Project Reactor
+
+          -> Reactive Library used by WebFlux.
+
+          -> Provides:
+                -> Mono
+                -> Flux
+
+================================================================================
+
+=> Mono
+
+    -> Represents 0 or 1 result.
+
+    -> Used when only one object is expected.
+
+    -> Examples
+
+          Get User By Id
+          Get Order By Id
+          Get Account Summary
+
+    -> Flow
+
+          Request
+             |
+             v
+         Mono<User>
+
+    -> Returns Single Object
+
+================================================================================
+
+=> Flux
+
+    -> Represents 0 to N results.
+
+    -> Used when multiple records are expected.
+
+    -> Examples
+
+          Get All Users
+          Get All Employees
+          Stream Stock Prices
+          Chat Messages
+
+    -> Flow
+
+          Request
+             |
+             v
+      Flux<User>
+
+          User1
+          User2
+          User3
+          User4
+          ....
+
+================================================================================
+
+=> Mono vs Flux
+
+    -> Mono
+
+          -> Single Result
+          -> 0 or 1 element
+          -> Example:
+                Get User By Id
+
+    -> Flux
+
+          -> Multiple Results
+          -> 0 to N elements
+          -> Example:
+                Get All Users From Bangalore
+
+================================================================================
+
+=> Why Flux Instead of Mono<List<User>> ?
+
+    -> Mono<List<User>>
+
+          Database
+               |
+               v
+      Collect all 10,000 users
+               |
+               v
+      Return complete list
+
+          -> User waits for entire result.
+
+    -> Flux<User>
+
+          Database
+               |
+               v
+
+          User1 ---->
+          User2 ---->
+          User3 ---->
+          User4 ---->
+
+          -> Data starts flowing immediately.
+          -> Better memory utilization.
+          -> True Reactive Streaming.
+
+================================================================================
+
+=> Complete Decision Flow
+
+    -> Need immediate response?
+          -> YES
+                -> Synchronous
+                -> RestTemplate
+                -> WebClient + block()
+
+    -> Need asynchronous communication?
+          -> YES
+
+                -> One-to-One?
+                      -> WebClient
+
+                -> One-to-Many?
+                      -> Event-Driven Architecture
+                      -> Kafka / RabbitMQ
+
+    -> Need high scalability and non-blocking processing?
+          -> Use Spring WebFlux
+
+                -> Single Result?
+                      -> Mono
+
+                -> Multiple Results?
+                      -> Flux
+
+================================================================================
+
+=> Final Interview Summary
+
+    -> Synchronous = Blocking = RestTemplate / WebClient.block()
+
+    -> Asynchronous One-to-One = WebClient
+
+    -> Asynchronous One-to-Many = Event-Driven Architecture
+
+    -> Kafka/RabbitMQ enable Publisher-Subscriber model
+
+    -> Reactive Programming = Non-Blocking + High Scalability
+
+    -> Spring WebFlux uses Project Reactor
+
+    -> Mono = Single Result
+
+    -> Flux = Stream of Multiple Results
+
+======================================================Reactive Programming Internal Flow=======================================================
+
+    -> Reactive Programming Internal Flow
+
+          -> Traditional Spring MVC follows Thread Per Request Model.
+
+          -> One request gets one dedicated thread.
+
+          -> Same thread handles:
+                -> Receiving request.
+                -> Business processing.
+                -> Database/API call.
+                -> Waiting for response.
+                -> Returning response.
+
+          -> Flow:
+
+                Request-1
+                    |
+                    v
+                Thread-1
+                    |
+                    v
+                Call Database
+                    |
+                    v
+                Wait For Result
+                    |
+                    v
+                Return Response
+
+          -> Problem:
+                -> Thread remains blocked while waiting.
+                -> CPU does no useful work during waiting period.
+                -> Large number of requests require large number of threads.
+                -> High memory consumption.
+
+================================================================================
+
+    -> How WebFlux Solves This Problem
+
+          -> WebFlux follows Event Loop Model.
+
+          -> When request arrives:
+                -> Event Loop Thread receives request.
+                -> Reactive pipeline (Mono/Flux) is created.
+                -> Database/API call is initiated.
+                -> Thread is immediately released.
+
+          -> Flow:
+
+                Request-1
+                    |
+                    v
+                EventLoop-1
+                    |
+                    v
+                Database/API Call
+                    |
+                    v
+                Save Pipeline State In Mono/Flux
+                    |
+                    v
+                Release EventLoop-1
+
+          -> EventLoop-1 is now free to process:
+                -> Request-2
+                -> Request-3
+                -> Request-4
+                -> Request-5
+
+================================================================================
+
+    -> What Happens To The Waiting Request?
+
+          -> Request is NOT lost.
+
+          -> Mono/Flux remembers:
+                -> Pending operation.
+                -> Remaining execution steps.
+                -> Connection information.
+                -> Response callback chain.
+
+          -> Framework stores the pipeline state.
+
+          -> Request is waiting for data, not for a thread.
+
+================================================================================
+
+    -> When Database/API Returns Result
+
+          -> Database completes operation.
+          -> Operating System sends notification.
+          -> Netty Event Loop receives notification.
+          -> Any available Event Loop Thread continues processing.
+
+          -> Flow:
+
+                Database Result Ready
+                       |
+                       v
+                EventLoop-2(any available thread) Picks Event
+                       |
+                       v
+                Resume Mono/Flux Pipeline
+                       |
+                       v
+                Process Result
+                       |
+                       v
+                Return Response To User
+
+================================================================================
+
+    -> Does Same Thread Return The Response?
+
+          -> Not necessarily.
+
+          -> Request may start on EventLoop-1.
+          -> Response may be returned by EventLoop-2.
+          -> Response may be returned by EventLoop-3.
+
+          -> WebFlux tracks pipeline state, not thread state.
+
+          -> Example:
+
+                Request Received By EventLoop-1
+                            |
+                            v
+                     External API Call
+                            |
+                            v
+                     EventLoop-1 Released
+
+                API Response Arrives
+                            |
+                            v
+                     EventLoop-3 Processes Result
+                            |
+                            v
+                     Response Returned To User
+
+================================================================================
+
+    -> Spring MVC vs WebFlux Thread Handling
+
+          -> Spring MVC
+
+                One Request
+                      |
+                      v
+                One Dedicated Thread
+                      |
+                      v
+                Same Thread Finishes Everything
+
+          -> WebFlux
+
+                One Request
+                      |
+                      v
+                Reactive Pipeline Created
+                      |
+                      v
+                Thread Released During Waiting
+                      |
+                      v
+                Any Available Thread Can Continue Processing
+                      |
+                      v
+                Response Returned
+
+================================================================================
+
+    -> Why WebFlux Scales Better
+
+          -> Threads are not blocked.
+          -> Small thread pool can handle many requests.
+          -> Better CPU utilization.
+          -> Lower memory consumption.
+          -> High concurrency support.
+          -> Suitable for I/O intensive systems.
