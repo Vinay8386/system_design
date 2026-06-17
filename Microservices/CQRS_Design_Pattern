@@ -1,0 +1,485 @@
+=> CQRS (Command Query Responsibility Segregation)
+
+      -> Definition
+         - CQRS is a design pattern that separates Read Operations (Queries) from Write Operations (Commands).
+         - Query operations only retrieve data and do not modify state.
+         - Command operations modify state (Create, Update, Delete, Book, Cancel, etc.).
+         - CQRS separates the Read Model from the Write Model.
+
+      -> Why CQRS is Needed
+         - In most real-world applications, read traffic is much higher than write traffic.
+         - Example (Movie Ticket Booking):
+              * 10,000 users check seat availability.
+              * 5,000 users check ticket prices.
+              * 1,000 users refresh the page.
+              * Only 100 users actually book tickets.
+         - Since reads are significantly higher than writes, both should be optimized separately.
+
+      -> Traditional Approach (Without CQRS)
+         - Same model, service, and database structure handle both reads and writes.
+         - Read and write operations compete for the same resources.
+         - Difficult to optimize independently.
+         - Scaling affects both operations together.
+
+      -> CQRS Architecture
+         - Query Side (Read Side)
+              * Responsible only for retrieving data.
+              * No data modification.
+              * Optimized for fast response.
+         - Command Side (Write Side)
+              * Responsible for creating, updating, deleting, booking, and cancelling.
+              * Contains business validations and transaction logic.
+              * Focuses on consistency and correctness.
+
+      -> Query Models
+         - Read models are optimized for displaying data.
+         - Example:
+
+              SeatAvailabilityView
+              - seatNo
+              - status
+              - price
+
+         - Used only for query operations.
+
+      -> Command Models
+         - Command models represent user actions.
+         - Examples:
+              * BookSeatCommand
+              * CancelBookingCommand
+              * UpdateSeatPriceCommand
+              * ReleaseSeatCommand
+         - Used only for state-changing operations.
+
+      -> CQRS Does NOT Mean
+         - One model for Read.
+         - One model for Create.
+         - One model for Update.
+         - One model for Delete.
+
+         Instead:
+
+              Query Side
+                    ↓
+                  Read
+
+              Command Side
+                    ↓
+             Create / Update / Delete / Book / Cancel
+
+      -> Implementing CQRS Using Separate Components
+         - Query Component
+              * Handles read operations.
+              * First checks cache(Redis, Hazalcast).
+              * If data is not found, retrieves from database.
+              * Stores response in cache for future requests.
+
+         - Command Component
+              * Handles write operations.
+              * Directly interacts with primary database.
+              * Performs validations and transactions.
+
+      -> Caching in Query Side
+         - L2 Cache can be implemented using:
+              * Redis
+              * Hazelcast
+         - Flow:
+              User Request
+                    ↓
+                 Cache
+                    ↓
+           Cache Hit → Return Response
+                    ↓
+           Cache Miss → Database
+                    ↓
+            Store in Cache
+                    ↓
+              Return Response
+
+      -> Benefits of CQRS
+         - Read and write logic remain isolated.
+         - Better code organization.
+         - Independent optimization of read and write workloads.
+         - Easier implementation of caching.
+         - Better scalability for high-read systems.
+         - Better performance.
+         - Easier maintenance.
+
+      -> CQRS with Read Replica Strategy
+         - Primary Database
+              * Handles all write operations.
+              * Source of truth.
+
+         - Read Replica Database
+              * Handles read operations.
+              * Receives replicated data from primary database.
+
+         - Flow:
+              Read Requests
+                    ↓
+             Read Replica
+
+              Write Requests
+                    ↓
+            Primary Database
+
+      -> Advantage of Read Replicas
+         - Read load is distributed.
+         - Database performance improves.
+         - Large number of read requests can be handled efficiently.
+
+      -> Drawback of Read Replicas
+         - Replication is not always immediate.
+         - Temporary delay may occur between primary and replica.
+         - User may receive stale/outdated data.
+
+         Example:
+              User A updates seat status.
+              User B reads from replica immediately.
+              Replica may not have received latest update yet.
+
+      -> Consistency vs Availability Trade-off
+         - Strong Consistency:
+              * Read and write from same database.
+              * Always latest data.
+              * Higher load on database.
+
+         - High Availability / Performance:
+              * Read from replica.
+              * Better performance.
+              * Possibility of stale data.
+
+         - System design depends on business requirements.
+
+      -> Scaling with CQRS
+         - Same Application Deployment:
+              * Query API and Command API exist in same service.
+              * Scaling one automatically scales both.
+
+         Example:
+
+              inventory-service
+                 GET  /seats
+                 POST /book-seat
+
+              2 Pods → 10 Pods
+
+              Both Query and Command scale together.
+
+         - Separate Deployment (Advanced CQRS):
+
+              inventory-query-service
+                 GET /seats
+
+              inventory-command-service
+                 POST /book-seat
+
+              Query Service: 20 Pods
+              Command Service: 3 Pods
+
+              Query and Command can scale independently based on requirements.
+              For example: 
+                    * 10,000 users check seat availability.
+                    * 5,000 users check ticket prices.
+                    * 1,000 users refresh the page.
+                    * Only 100 users actually book tickets.
+                
+                -> Here Query Service require more scaling in comparison to command service, so it will scale out based on demands.
+
+        -> CQRS + Event Sourcing Flow
+
+            Step 1: User Initiates Booking
+                * User clicks "Book Seat".
+                * Request reaches Command API.
+                * Request is converted into a Command Object.
+
+                Example:
+                    BookSeatCommand
+                    {
+                        seatNo : "A10",
+                        userId : "V123"
+                    }
+
+            Step 2: Command Service Validation
+                * Command Service validates:
+                    - Seat exists?
+                    - Seat available?
+                    - User valid?
+                    - Payment successful?
+                * If validation passes, an Event is generated.
+
+                Example:
+                    SeatBookedEvent
+
+            Step 3: Store Event in Event Store
+                * Generated event is stored in Event Store.
+                * Event Store becomes the source of truth.
+                * Every state change is stored as an event.
+
+                Example:
+
+                    SeatCreatedEvent
+                    SeatReservedEvent
+                    SeatBookedEvent
+                    SeatCancelledEvent
+
+            Step 4: Publish Event
+                * After storing event, it is published to Kafka/Event Bus.
+                * Other services can subscribe to these events.
+
+                Example:
+
+                    SeatBookedEvent
+                            ↓
+                            Kafka
+
+            Step 5: Update Read Model(Read model means Read database, model class is just a blueprint)
+                * Read Model Consumer listens to Kafka events.
+                * Once event is received, Read Model is updated.
+
+                Example:
+
+                    Before:
+                            Seat A10 = Available
+
+                    After:
+                            Seat A10 = Booked
+
+            Step 6: User Queries Data
+                * User requests seat availability.
+                * Query Service does NOT read from Event Store.
+                * Query Service reads from Read Model.
+
+                Example:
+
+                    GET /seats
+
+            Step 7: Return Response
+                * Read Model already contains latest calculated state.
+                * Response is returned immediately.
+
+                Example:
+
+                    A10 = Booked
+                    A11 = Available
+                    A12 = Available
+
+            Complete Flow:
+
+                    User
+                        ↓
+                BookSeatCommand
+                        ↓
+                Command Service
+                        ↓
+                    Validation
+                        ↓
+                SeatBookedEvent
+                        ↓
+                    Event Store
+                        ↓
+                Kafka/Event Bus
+                        ↓
+                Read Model Consumer
+                        ↓
+                Update Read Model
+                        ↓
+                Query Service
+                        ↓
+                    Read Model
+                        ↓
+                Query Response
+
+            Why Read Model/database is Needed?
+                * Event Store may contain lakhs of events.
+                * Replaying all events for every query is expensive.
+                * Read Model stores the latest calculated state.
+                * Query Service directly reads from Read Model for fast response.
+
+            Interview Summary:
+                * Command Side writes Events.
+                * Event Store stores complete history.
+                * Kafka/Event Bus distributes Events.
+                * Read Model stores current state.
+                * Query Side reads from Read Model.
+                * CQRS + Event Sourcing provides scalability, auditability, and high performance.
+
+      -> When to Use CQRS
+         - Movie Ticket Booking Systems
+         - E-commerce Platforms
+         - Banking Applications
+         - Large Distributed Systems
+         - Systems with significantly higher read traffic than write traffic
+
+      -> When NOT to Use CQRS
+         - Small CRUD applications.
+         - Employee Management Systems.
+         - Student Management Systems.
+         - Applications with low traffic.
+         - Projects where additional complexity is not justified.
+
+      -> Interview Summary
+         - CQRS separates Read Operations from Write Operations.
+         - Query Side focuses on performance and scalability.
+         - Command Side focuses on consistency and business rules.
+         - Query side can leverage Cache and Read Replicas.
+         - Command side works with Primary Database and Transactions.
+         - CQRS is most beneficial when read traffic is much higher than write traffic.
+         - CQRS is often combined with Event Sourcing in large-scale distributed systems.
+
+=> Snapshotting
+
+      -> Definition
+         - Snapshotting is a technique used in Event Sourcing to improve performance.
+         - Instead of replaying all historical events every time, the system stores the current calculated state at a particular point in time.
+         - This stored state is called a Snapshot.
+
+      -> Why Snapshotting is Needed?
+         - In Event Sourcing, current state is reconstructed by replaying events.
+         - Over time, millions of events may be stored.
+         - Replaying all events for every request becomes slow and expensive.
+         - Snapshotting reduces the number of events that need to be replayed.
+
+      -> Problem Without Snapshotting
+
+         Event Store:
+
+              Event 1
+              Event 2
+              Event 3
+              ...
+              Event 10,00,000
+
+         To find current state:
+
+              Replay Event 1
+                    ↓
+              Replay Event 2
+                    ↓
+              Replay Event 3
+                    ↓
+              ...
+                    ↓
+              Replay Event 10,00,000
+
+         - Very high processing time.
+         - Poor performance.
+
+      -> Solution Using Snapshotting
+
+         Example:
+
+              Snapshot Created at Event 9,90,000
+
+              Snapshot:
+                   Seat A10 = Reserved
+
+              Remaining Events:
+
+                   Event 9,90,001
+                   Event 9,90,002
+                   ...
+                   Event 10,00,000
+
+         Current State Calculation:
+
+              Load Snapshot
+                    ↓
+              Replay Remaining Events Only
+                    ↓
+              Current State Generated
+
+         - Much faster than replaying all events.
+
+      -> Example in Movie Ticket Booking
+
+         Event Store:
+
+              SeatCreated
+              SeatReserved
+              PaymentSuccessful
+              SeatBooked
+              NotificationSent
+
+         Snapshot after SeatBooked:
+
+              Seat A10 = Booked
+
+         Later:
+
+              NotificationSent Event
+
+         To get current state:
+
+              Load Snapshot
+                    ↓
+              Replay NotificationSent Event
+                    ↓
+              Final State Generated
+
+         - No need to replay all previous events.
+
+      -> When Snapshot is Created?
+
+         Common Strategies:
+
+              1. After every N events
+                   Example:
+                        Every 1000 events
+
+              2. Based on time interval
+                   Example:
+                        Every 1 hour
+
+              3. Based on business requirement
+
+      -> Snapshot Storage
+
+         - Snapshot can be stored in:
+              * Database Table
+              * EventStoreDB
+              * Redis
+              * Separate Snapshot Store
+
+         Example:
+
+              seat_snapshot
+
+              --------------------------------
+              seat_no | status | version
+              --------------------------------
+              A10     | Booked | 990000
+              --------------------------------
+
+      -> Snapshotting Flow
+
+              User Request
+                    ↓
+              Load Latest Snapshot
+                    ↓
+              Find Events After Snapshot
+                    ↓
+              Replay Remaining Events
+                    ↓
+              Generate Current State
+                    ↓
+              Return Response
+
+      -> Advantages
+
+         - Faster state reconstruction.
+         - Better performance.
+         - Reduced CPU usage.
+         - Reduced event replay time.
+         - Essential for large Event Stores.
+
+      -> Important Interview Point
+
+         Event Sourcing stores complete history.
+         Snapshotting stores the latest calculated state.
+
+         Event Store = Complete History
+         Snapshot = Latest Checkpoint
+
+         Snapshotting does NOT replace Event Store.
+         It only improves performance by reducing event replay.

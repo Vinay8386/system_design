@@ -1,0 +1,255 @@
+=> Consistency in Distributed Transactions
+
+      -> What is a Distributed Transaction?
+         - A distributed transaction is a single business operation that spans multiple services or databases.
+         - Each service performs its own Local Transaction.
+         - All services must remain consistent even if failures occur.
+
+         Example:
+              Movie Ticket Booking
+
+              Inventory Service
+                    ↓
+              Payment Service
+                    ↓
+              Notification Service
+
+              If payment fails, seat booking should also fail.
+              If seat booking succeeds, payment should also succeed.
+
+      -> Why Consistency is Challenging?
+         - Services are distributed across multiple servers.
+         - Each service has its own database.
+         - Network failures can occur.
+         - Service crashes can occur.
+         - Partial success may happen.
+
+         Example:
+
+              Inventory Service → Seat Booked ✓
+              Payment Service → Failed ✗
+
+              Result:
+                   Inconsistent State
+
+              Seat is booked but payment not received.
+
+      -> Strategies to Maintain Consistency
+
+         Strategy 1: Two-Phase Commit (2PC)
+
+         Strategy 2: Saga Pattern
+
+         Strategy 3: Eventual Consistency
+
+         Strategy 4: Compensation Transactions
+
+         Note:
+              In modern Microservices Architecture, Saga Pattern is the most commonly used approach.
+
+      -> Strategy 1: Two-Phase Commit (2PC)
+
+         - Used to maintain Strong Consistency.
+         - All participating services must agree before commit happens.
+         - A Transaction Coordinator controls the flow.
+
+         Phase 1: Prepare Phase
+
+              Coordinator asks all services:
+
+                   "Can you perform this transaction?"
+
+              Inventory Service → YES
+              Payment Service → YES
+              Notification Service → YES
+
+              If all services agree, transaction moves to Phase 2.
+
+         Phase 2: Commit Phase
+
+              Coordinator sends COMMIT request.
+
+              Inventory Service → Commit
+              Payment Service → Commit
+              Notification Service → Commit
+
+              Transaction completed successfully.
+
+         Failure Scenario:
+
+              Inventory Service → YES
+              Payment Service → NO
+
+              Coordinator sends ROLLBACK.
+
+              No service commits.
+
+      -> Advantages of 2PC
+
+         - Strong Consistency.
+         - Either everything succeeds or everything fails.
+         - No partial updates.
+
+      -> Disadvantages of 2PC
+
+         - Services become tightly coupled.
+         - All services must wait for each other.
+         - Coordinator becomes a bottleneck.
+         - Poor scalability.
+         - High latency.
+         - Not suitable for large-scale microservices systems.
+
+      -> Strategy 2: Saga Pattern
+
+         - Most popular consistency pattern in Microservices.
+         - No global transaction exists.
+         - Each service executes its own Local Transaction.
+         - Services communicate through Events.
+         - Rollback is achieved using Compensation Transactions.
+
+         Example:
+
+              Service 1 → Inventory Service
+              Service 2 → Payment Service
+              Service 3 → Notification Service
+
+      -> Saga Success Flow
+
+              Seat Booking Request
+                     ↓
+              Inventory Service
+                     ↓
+              Seat Reserved Event
+                     ↓
+              Payment Service
+                     ↓
+              Payment Success Event
+                     ↓
+              Notification Service
+                     ↓
+              Notification Sent Event
+                     ↓
+              Transaction Complete
+
+      -> Saga Failure Flow
+
+              Inventory Service
+                     ↓
+              Seat Reserved Event
+                     ↓
+              Payment Service
+                     ↓
+              Payment Failed Event
+                     ↓
+              Compensation Starts
+
+              Inventory Service
+                     ↓
+              Release Seat
+                     ↓
+              Transaction Rolled Back
+
+      -> Compensation Transaction
+
+         - Used to undo previously completed Local Transactions.
+         - Each service is responsible for reversing its own work.
+
+         Example:
+
+              Seat Reserved
+                     ↓
+              Payment Failed
+                     ↓
+              Release Seat
+
+              Seat reservation is undone.
+
+      -> How Rollback Happens in Saga?
+
+         Example:
+
+              Service 1 → Success
+              Service 2 → Success
+              Service 3 → Success
+              Service 4 → Failed
+
+         Service 4 publishes Failure Event.
+                     ↓
+         Service 3 receives Failure Event.
+                     ↓
+         Service 3 executes Compensation Transaction.
+                     ↓
+         Service 2 executes Compensation Transaction.
+                     ↓
+         Service 1 executes Compensation Transaction.
+                     ↓
+         System returns to previous consistent state.
+
+      -> Advantages of Saga Pattern
+
+         - Services remain loosely coupled.
+         - Better scalability.
+         - Better fault tolerance.
+         - No global lock.
+         - No coordinator bottleneck.
+         - Suitable for cloud-native architectures.
+         - Works well with Kafka/RabbitMQ.
+
+      -> Disadvantages of Saga Pattern
+
+         - Complex implementation.
+         - Rollback logic must be written manually.
+         - Temporary inconsistency may exist.
+         - Debugging is harder.
+
+      -> Eventual Consistency
+
+         - Saga does not guarantee immediate consistency.
+         - Consistency is achieved eventually after all events are processed.
+
+         Example:
+
+              Seat Reserved
+                     ↓
+              Payment Success
+                     ↓
+              Notification Sent
+
+              All services eventually reach the same state.
+
+      -> 2PC vs Saga Pattern
+
+         2PC
+
+              - Strong Consistency
+              - Central Coordinator
+              - Tightly Coupled Services
+              - Blocking Operation
+              - Poor Scalability
+              - High Latency
+              - Suitable for Small Distributed Systems
+
+         Saga
+
+              - Eventual Consistency
+              - No Central Coordinator (Choreography)
+              - Loosely Coupled Services
+              - Non-Blocking Operation
+              - High Scalability
+              - Better Performance
+              - Suitable for Microservices Architecture
+
+      -> Interview Answer
+
+         To maintain consistency in Distributed Transactions, we can use:
+              1. Two-Phase Commit (2PC)
+              2. Saga Pattern
+              3. Compensation Transactions
+              4. Eventual Consistency
+
+         For modern Microservices Architecture, Saga Pattern is generally preferred because:
+              - Services remain loosely coupled.
+              - Better scalability.
+              - Better fault tolerance.
+              - No coordinator bottleneck.
+              - Works efficiently with Event-Driven Architecture using Kafka or RabbitMQ.

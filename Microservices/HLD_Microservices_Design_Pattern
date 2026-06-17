@@ -86,33 +86,9 @@
                                 ------------------------------
                                 | User | Order | Payment | ... |
                                 ------------------------------
-            -> Synchronous Communication Pattern (REST / gRPC): In synchronous communication, one service sends a request to another service and waits for the response before continuing.
-                -> Problem Statement: Some business flow require immediate response and strong consistency and sequential execution.
-                -> For Example: Order service must confirm payment before placing an order.
-                -> Solution: Service communicate using blocking protocol such as: REST(HTTP), gRPC
-                                Order Service
-                                      |
-                                      | (REST / gRPC call)
-                                      v
-                                Payment Service
-                                      |
-                                   Response
-                -> Synchronous communication is simple but tightly couples services and increases failure risk.
+            -> Synchronous Communication Pattern : Refer Microservices/Microservices_Intercommunication
 
-            -> Asynchronous Communication Pattern (Event-Driven)
-                -> In asynchronous communication, services communicate by publishing events without waiting for immediate responses.
-                -> Synchronous calls cause high latency, cascading failure and reduced availability. Some systems can tolerate eventual consistency.
-                -> Solution: Use message brokers (Kafka, RabbitMQ) where Producer publishes events and Consumers react independently
-                                Order Service
-                                      |
-                                      | Publish Event
-                                      v
-                                 Message Broker (Kafka)
-                                      |
-                                ---------------------------
-                                | Payment | Inventory | Notification |
-                                ---------------------------
-                -> Asynchronous communication improves resilience and scalability at the cost of immediate consistency.
+            -> Asynchronous Communication Pattern: Refer Microservices/Microservices_Intercommunication
 
             -> Service Discovery Pattern: The Service Discovery Pattern allows services to dynamically find the network location of other services.
                 -> In microservices, Services scale up/down dynamically, IP addresses change frequently, Hardcoding service locations is impossible
@@ -138,34 +114,7 @@
                 -> Choreography - services communicate via events
                 -> Orchestration - a central coordinator controls flow
 
-        -> CQRS (Command Query Responsibility Segregation): CQRS separates write operations (commands) from read operations (queries) into different models.
-            -> In CQRS, a command changes system state, while a query only reads data and does not modify it.
-            -> In traditional application design, the same data model is often used for both read and write operations.
-            -> As the system grows, this approach leads to several issues:
-                -> Read operations become complex due to business rules embedded in the write model
-                -> Write performance degrades because the model must also support heavy queries
-                -> Scaling becomes difficult since read and write workloads have different characteristics
-            -> This tight coupling of reads and writes limits performance, scalability, and maintainability.
-            -> Reason for the Problem:
-                -> Read and write operations have fundamentally different requirements:
-                    -> Writes require validation, business logic, and consistency
-                    -> Reads require fast, optimized data access
-                -> Using a single model forces one side to compromise for the other.
-            -> Solution:
-                -> CQRS addresses this problem by separating concerns:
-                    -> Command Model: Handles create, update, and delete operations. Focuses on business rules and data consistency
-                    -> Query Model: Handles read-only operations. Uses denormalized or optimized data structures for fast access
-            -> The two models can evolve independently and scale independently.
-                    Client
-                      |
-                    ---------------------------
-                    |                         |
-                    Command API            Query API
-                      |                         |
-                    Write Model            Read Model
-                      |                         |
-                    Write DB               Read DB
-
+        -> CQRS (Command Query Responsibility Segregation): Refer CQRS_Design_Pattern documents
 
     -> Resilience & operational patterns:
         -> Resilience patterns prevent cascading failures at runtime, while operational patterns ensure safe deployment, monitoring, and recovery in production. Together, they enable systems to fail gracefully instead of catastrophically.
