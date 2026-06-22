@@ -1,0 +1,4122 @@
+=> Latency Percentiles (P50, P90, P95, P99)
+
+   -> What is Latency?
+      Latency = Time taken by a system to process a request and return a response.
+
+      Example:
+      Request-1 → 100 ms
+      Request-2 → 120 ms
+      Request-3 → 150 ms
+
+      Here, 100 ms, 120 ms, and 150 ms are the latencies of individual requests.
+
+   -> Why Average Latency is Not Sufficient?
+      Average latency can hide slow requests (outliers).
+
+      Example:
+
+      Request Latencies:
+      100 ms
+      100 ms
+      100 ms
+      100 ms
+      4600 ms
+
+      Average Latency:
+      = (100 + 100 + 100 + 100 + 4600) / 5
+      = 1000 ms
+
+      Looking only at average suggests every user waits around 1 second.
+
+      Reality:
+      - 4 users received response in 100 ms.
+      - Only 1 user waited 4.6 seconds.
+
+      Therefore, average latency does not accurately represent user experience.
+
+   -> What is a Percentile?
+      Percentile tells us:
+
+      "X% of requests completed within Y milliseconds."
+
+      Example:
+      P95 = 300 ms
+
+      Meaning:
+      - 95% requests completed within 300 ms.
+      - 5% requests took more than 300 ms.
+
+      This gives a much better understanding of system performance than average latency.
+
+   -> Understanding P50 (Median Latency)
+
+      Example Dataset (Sorted):
+
+      10
+      20
+      30
+      40
+      50
+      60
+      70
+      80
+      90
+      100
+
+      Total Requests = 10
+
+      P50 Position:
+      = 50/100 × 10
+      = 5
+
+      5th value = 50
+
+      Therefore:
+      P50 = 50 ms
+
+      Meaning:
+      - 50% requests completed within 50 ms.
+      - 50% requests took more than 50 ms.
+
+      Important:
+      P50 is also called Median Latency.
+
+   -> Understanding P90
+
+      Same Dataset:
+
+      10
+      20
+      30
+      40
+      50
+      60
+      70
+      80
+      90
+      100
+
+      P90 Position:
+      = 90/100 × 10
+      = 9
+
+      9th value = 90
+
+      Therefore:
+      P90 = 90 ms
+
+      Meaning:
+      - 90% requests completed within 90 ms.
+      - 10% requests took more than 90 ms.
+
+   -> Understanding P95
+
+      Same Dataset:
+
+      10
+      20
+      30
+      40
+      50
+      60
+      70
+      80
+      90
+      100
+
+      P95 Position:
+      = 95/100 × 10
+      = 9.5
+
+      Value lies between 9th and 10th position.
+
+      Therefore:
+      P95 ≈ 95 ms
+
+      Meaning:
+      - 95% requests completed within 95 ms.
+      - 5% requests took more than 95 ms.
+
+   -> Understanding P99
+
+      Same Dataset:
+
+      10
+      20
+      30
+      40
+      50
+      60
+      70
+      80
+      90
+      100
+
+      P99 Position:
+      = 99/100 × 10
+      = 9.9
+
+      Value lies very close to the last element.
+
+      Therefore:
+      P99 ≈ 99 ms
+
+      Meaning:
+      - 99% requests completed within 99 ms.
+      - Only 1% requests took more than 99 ms.
+
+   -> Real Production Example
+
+      Total Requests:
+      1,000,000
+
+      Metrics:
+
+      P50 = 50 ms
+      P90 = 120 ms
+      P95 = 250 ms
+      P99 = 1000 ms
+
+      Interpretation:
+
+      P50:
+      - 500,000 requests completed within 50 ms.
+
+      P90:
+      - 900,000 requests completed within 120 ms.
+
+      P95:
+      - 950,000 requests completed within 250 ms.
+
+      P99:
+      - 990,000 requests completed within 1000 ms.
+
+      Remaining:
+      - 10,000 requests took more than 1000 ms.
+
+   -> Relationship Between P50, P90, P95 and P99
+
+      P50 represents the experience of a typical user.
+
+      P90 represents the experience of almost all users.
+
+      P95 represents the experience of nearly every user.
+
+      P99 represents the experience of the slowest users.
+
+      As percentile increases: P50 → P90 → P95 → P99
+
+      We move closer towards the slowest requests in the system.
+
+   -> Tail Latency
+
+      Consider:
+
+      P50 = 50 ms
+      P90 = 100 ms
+      P95 = 200 ms
+      P99 = 5000 ms
+
+      Observation:
+      - Most users get responses within a few hundred milliseconds.
+      - A very small percentage of users wait several seconds.(1 % user wait for 5s)
+
+      These slow requests are called Tail Requests.
+
+      The latency associated with these requests is called Tail Latency.
+
+      Therefore:
+      P99 and P99.9 are commonly used to measure Tail Latency.
+
+   -> Why P99 is Important?
+
+      Example:
+
+      P50 = 20 ms
+      P95 = 100 ms
+      P99 = 5000 ms
+
+      At first glance the system looks fast.
+
+      However:
+
+      If total traffic is 100 million requests/day:
+
+      1% of 100 million
+      = 1 million requests
+
+      Therefore:
+      1 million users/day are experiencing 5-second delays.
+
+      This is why monitoring only average latency or P50 is not sufficient.
+
+   -> Service Level Agreement (SLA)
+
+      Companies generally define SLAs using percentiles.
+
+      Example: "95% of requests must complete within 200 ms."
+
+      Meaning:
+
+      P95 ≤ 200 ms
+
+      Similarly: "99% of requests must complete within 500 ms."
+
+      Meaning: P99 ≤ 500 ms
+
+      Percentiles provide a more realistic measurement of user experience than average latency.
+
+   -> Distributed System Example
+
+      Request Flow:
+
+      Client
+         ↓
+      API Gateway
+         ↓
+      Order Service
+         ↓
+      Inventory Service
+         ↓
+      Payment Service
+         ↓
+      Database
+
+      Metrics:
+
+      P50 = 100 ms
+      P95 = 400 ms
+      P99 = 3000 ms
+
+      Interpretation:
+
+      - Most requests are fast.
+      - A small percentage of requests are taking around 3 seconds.
+      - These slow requests contribute to Tail Latency.
+
+   -> Important Summary
+
+      Latency = Time taken to process a request.
+
+      Average Latency can hide slow requests.
+
+      Percentile = X% requests completed within Y milliseconds.
+
+      P50 = Median Latency.
+
+      P90 = 90% requests completed within this latency.
+
+      P95 = 95% requests completed within this latency.
+
+      P99 = 99% requests completed within this latency.
+
+      Tail Latency = Latency of the slowest requests (typically P99/P99.9).
+
+      Higher percentile values provide better visibility into the experience of slow users.
+
+      Production systems generally monitor:
+      P50, P90, P95, P99 and P99.9.
+
+===================================================! Latency in Distributed Systems & Parallel Processing !===================================
+
+=> Latency in Distributed Systems & Parallel Processing
+
+   -> Why Latency Becomes More Important in Distributed Systems?
+
+      In a Monolithic Application:
+
+      Client
+         ↓
+      Application
+         ↓
+      Database
+
+      Total Latency = Application Processing + Database Time
+
+      Example:
+
+      App Processing = 50 ms
+      Database = 30 ms
+
+      Total Latency = 80 ms
+
+      Easy to monitor and optimize.
+
+      ------------------------------------------------
+
+      In a Distributed System:
+
+      Client
+         ↓
+      API Gateway
+         ↓
+      Service A
+         ↓
+      Service B
+         ↓
+      Service C
+         ↓
+      Database
+
+      Total Latency:
+
+      = Network Latency
+      + Service A Latency
+      + Network Latency
+      + Service B Latency
+      + Network Latency
+      + Service C Latency
+      + Database Latency
+
+      Therefore:
+
+      Even if every service is fast individually,
+      overall request can become slow.
+
+   -> End-to-End Latency
+
+      End-to-End Latency (E2E)
+
+      Time taken from:
+
+      Client sends request
+                ↓
+      Client receives response
+
+      Example:
+
+      API Gateway       = 20 ms
+      Order Service     = 50 ms
+      Inventory Service = 40 ms
+      Payment Service   = 70 ms
+      Database          = 20 ms
+
+      Total E2E Latency = 20 + 50 + 40 + 70 + 20 = 200 ms
+
+      User only sees: 200 ms
+
+      User never sees individual service latency.
+
+   -> Sequential Processing Latency
+
+      Flow:
+
+      Client
+         ↓
+      Service A
+         ↓
+      Service B
+         ↓
+      Service C
+
+      Example:
+
+      Service A = 100 ms
+      Service B = 150 ms
+      Service C = 200 ms
+
+      Total Latency
+
+      = 100 + 150 + 200
+
+      = 450 ms
+
+      Formula:
+
+      Total Latency
+      = Sum of all service latencies
+
+   -> Parallel Processing Latency
+
+      Flow:
+
+                 Service A
+                ↗
+      Client →
+                ↘
+                 Service B
+
+                ↘
+                 Service C
+
+      Example:
+
+      Service A = 100 ms
+      Service B = 150 ms
+      Service C = 200 ms
+
+      Since all execute simultaneously:
+
+      Total Latency
+
+      = Max(A, B, C)
+
+      = Max(100,150,200)
+
+      = 200 ms
+
+      Important:
+
+      Parallel execution reduces latency because services execute concurrently.
+
+   -> Why Parallel Processing Is Used?
+
+      Sequential:
+
+      Product Service   = 100 ms
+      Review Service    = 150 ms
+      Recommendation    = 200 ms
+
+      Total
+
+      = 450 ms
+
+      ------------------------------------------------
+
+      Parallel:
+
+      Product Service   = 100 ms
+      Review Service    = 150 ms
+      Recommendation    = 200 ms
+
+      Total
+
+      = 200 ms
+
+      Reduction
+
+      450 ms → 200 ms
+
+      This is heavily used by:
+
+      - Amazon
+      - Netflix
+      - Microsoft
+      - Google
+
+   -> Amazon Example
+
+      Product Detail Page
+
+      User Opens Product
+
+      Amazon simultaneously calls:
+
+      - Product Service
+      - Pricing Service
+      - Review Service
+      - Inventory Service
+      - Recommendation Service
+
+      All services execute in parallel.
+
+      Example:
+
+      Product Service         = 120 ms
+      Pricing Service         = 80 ms
+      Review Service          = 150 ms
+      Inventory Service       = 70 ms
+      Recommendation Service  = 200 ms
+
+      Total Page Latency
+
+      = Maximum Latency
+
+      = 200 ms
+
+      Not
+
+      = 620 ms
+
+      This significantly improves user experience.
+
+   -> Netflix Example
+
+      User Opens Home Screen
+
+      Netflix simultaneously fetches:
+
+      - User Profile
+      - Continue Watching
+      - Trending Movies
+      - Recommendations
+      - Ads/Promotions
+
+      All requests execute in parallel.
+
+      Home page latency depends on:
+
+      Slowest service
+
+      not
+
+      Sum of all services.
+
+   -> Microsoft Example
+
+      User Opens Outlook
+
+      Outlook fetches:
+
+      - Emails
+      - Calendar
+      - Contacts
+      - Teams Status
+
+      All services execute concurrently.
+
+      Total latency is determined by:
+
+      Slowest dependency
+
+      rather than
+
+      Sum of all dependencies.
+
+   -> Critical Rule of Parallel Processing
+
+      Sequential Execution:
+
+      Total Latency = Sum of all latencies
+
+      ------------------------------------------------
+
+      Parallel Execution:
+
+      Total Latency = Maximum latency among all parallel tasks
+
+      This is one of the most important interview concepts.
+
+   -> Tail Latency Amplification
+
+      Suppose:
+
+      Service A P99 = 100 ms
+      Service B P99 = 100 ms
+      Service C P99 = 100 ms
+
+      Looks good individually.
+
+      ------------------------------------------------
+
+      Request Flow:
+
+      Client
+         ↓
+      Service A
+         ↓
+      Service B
+         ↓
+      Service C
+
+      Each service has:
+
+      1% probability of being slow.
+
+      When many services participate in a request:
+
+      Probability of encountering a slow service increases.
+
+      Therefore:
+
+      Overall System P99
+      becomes worse than
+      Individual Service P99.
+
+      This phenomenon is called Tail Latency Amplification.
+
+   -> Amazon Tail Latency Example
+
+      Product Page calls:
+
+      100 Microservices
+
+      Each service:
+
+      P99 = 100 ms
+
+      Even though each service looks healthy,
+
+      Probability that at least one service becomes slow increases significantly.
+
+      Therefore Final page latency becomes much higher.
+
+      This is one of the biggest challenges in large-scale distributed systems.
+
+   -> Fan-Out Problem
+
+      Fan-Out means:
+
+      One request triggers many downstream requests.
+
+      Example:
+
+                     Service A
+                   ↗
+      Client → API →
+                   ↘
+                     Service B
+
+                   ↘
+                     Service C
+
+                   ↘
+                     Service D
+
+                   ↘
+                     Service E
+
+      As Fan-Out increases:
+
+      - More network calls
+      - More dependency latency
+      - More chances of slow responses
+
+      Therefore Tail latency increases.
+
+   -> Latency Budget
+
+      Large organizations define latency budgets.
+
+      Example:
+
+      Target Page Latency = 500 ms
+
+      Budget Allocation:
+
+      API Gateway        = 50 ms
+      Order Service      = 100 ms
+      Inventory Service  = 100 ms
+      Payment Service    = 150 ms
+      Database           = 100 ms
+
+      Total Budget
+
+      = 500 ms
+
+      Every team must stay within its allocated budget.
+
+   -> Distributed System Latency Components
+
+      End-to-End Latency generally consists of:
+
+      - Network Latency
+      - Serialization/Deserialization
+      - Service Processing Time
+      - Database Latency
+      - Cache Latency
+      - Queue Waiting Time
+      - Load Balancer Time
+
+      Total Latency
+
+      = Sum of all components
+
+   -> What Do Large Organizations Monitor?
+
+      Amazon:
+      - P50
+      - P90
+      - P95
+      - P99
+      - End-to-End Latency
+
+      Netflix:
+      - Service Latency
+      - Tail Latency
+      - Fan-Out Latency
+
+      Microsoft:
+      - End-to-End Latency
+      - Dependency Latency
+      - P95/P99
+
+      Google:
+      - Tail Latency
+      - Distributed Request Latency
+      - Latency Budget Compliance
+
+   -> Important Summary
+
+      Monolith:
+
+      Total Latency = Application Time + Database Time
+
+      ------------------------------------------------
+
+      Sequential Distributed System:
+
+      Total Latency = Sum of all service latencies
+
+      ------------------------------------------------
+
+      Parallel Distributed System:
+
+      Total Latency = Maximum latency among parallel services
+
+      ------------------------------------------------
+
+      End-to-End Latency = Time from client request to final response
+
+      ------------------------------------------------
+
+      Fan-Out = One request triggering multiple downstream requests
+
+      ------------------------------------------------
+
+      Tail Latency Amplification = Overall system latency becoming worse due to many distributed service dependencies
+
+      ------------------------------------------------
+
+      Latency Budget = Predefined latency allocation for every service participating in a request
+
+      ------------------------------------------------
+
+      Modern organizations focus heavily on:
+
+      P95
+      P99
+      End-to-End Latency
+      Tail Latency
+      Latency Budget
+      Fan-Out Impact
+
+===================================================! latency Reason !====================================================
+
+=> Common Causes of Latency in Distributed Systems
+
+   -> What Does Latency Reason Mean?
+
+      Latency reason refers to any factor that increases the time taken
+      to process a request and return a response.
+
+      Example:
+
+      Normal Response Time = 100 ms
+
+      Due to some bottleneck:
+
+      Response Time = 2000 ms
+
+      Additional 1900 ms came from one or more latency causes.
+
+   -> Network Latency
+
+      Time spent transferring data between systems.
+
+      Example:
+
+      User (India)
+         ↓ Internet
+      Server (US)
+
+      Even if server processing takes only 20 ms,
+
+      Data travel time may take:
+
+      150-200 ms
+
+      Therefore:
+
+      Total latency becomes much higher.
+
+      Common Reasons:
+
+      - Long geographical distance
+      - Slow network links
+      - Packet retransmission
+      - Congested network
+
+   -> DNS Resolution Latency
+
+      Before connecting to a server,
+      client must find server IP.
+
+      Example:
+
+      amazon.com
+          ↓
+      DNS Lookup
+          ↓
+      52.x.x.x
+
+      If DNS resolution takes:
+
+      100 ms
+
+      Then request processing cannot even start before that.
+
+   -> TLS/SSL Handshake Latency
+
+      Before secure communication begins,
+      client and server perform SSL handshake.
+
+      Flow:
+
+      Client
+         ↔
+      Server
+
+      Exchange certificates
+      Validate certificates
+      Generate session keys
+
+      Example:
+
+      API Processing = 50 ms
+
+      SSL Handshake = 150 ms
+
+      Total = 200 ms
+
+      Therefore handshake contributes to latency.
+
+   -> Load Balancer Latency
+
+      Request first reaches Load Balancer.
+
+      Flow:
+
+      Client
+         ↓
+      Load Balancer
+         ↓
+      Application Server
+
+      Load Balancer must:
+
+      - Accept connection
+      - Select server
+      - Forward request
+
+      This introduces additional latency.
+
+   -> Application Processing Latency
+
+      Time spent executing business logic.
+
+      Example:
+
+      Calculate Order
+      Validate User
+      Generate Invoice
+      Update Inventory
+
+      Processing Time = 300 ms
+
+      This directly contributes to total latency.
+
+   -> Database Query Latency
+
+      Time spent executing database operations.
+
+      Example:
+
+      SELECT * FROM ORDERS
+      WHERE CUSTOMER_ID = 100
+
+      Database may require:
+
+      - Search
+      - Filtering
+      - Sorting
+      - Joining tables
+
+      Query Time = 500 ms
+
+      Therefore:
+
+      Database becomes major latency contributor.
+
+   -> Missing Index Latency
+
+      Example:
+
+      Customer Table
+
+      Query:
+
+      SELECT *
+      FROM CUSTOMER
+      WHERE EMAIL='abc@gmail.com'
+
+      Without Index:
+
+      Database scans every row.
+
+      Rows:
+
+      10 Million
+
+      Query becomes slow.
+
+      With Index:
+
+      Database directly jumps to matching row.
+
+      Latency decreases significantly.
+
+   -> Database Lock Contention
+
+      Multiple transactions trying to access same data.
+
+      Example:
+
+      User-A updating Seat-101
+
+      User-B updating Seat-101
+
+      User-B must wait.
+
+      Waiting Time increases latency.
+
+      Common in:
+
+      - Ticket Booking
+      - Banking
+      - Inventory Systems
+
+   -> Connection Pool Exhaustion
+
+      Application uses DB connection pool.
+
+      Example:
+
+      Pool Size = 50
+
+      Active Requests = 500
+
+      First 50 requests get connections.
+
+      Remaining 450 requests wait.
+
+      Waiting Time increases latency.
+
+   -> Thread Pool Exhaustion
+
+      Server uses worker threads.
+
+      Example:
+
+      Available Threads = 100
+
+      Incoming Requests = 1000
+
+      First 100 requests execute.
+
+      Remaining 900 wait in queue.
+
+      Queue waiting increases latency.
+
+   -> Queue Waiting Latency
+
+      Request enters queue before processing.
+
+      Example:
+
+      Kafka Consumer
+
+      Incoming Messages = 1 Million
+
+      Consumer Capacity = 100K/minute
+
+      Messages wait in queue.
+
+      Waiting time contributes to latency.
+
+   -> Garbage Collection (GC) Pause
+
+      JVM periodically cleans unused memory.
+
+      During GC:
+
+      Application threads may pause.
+
+      Example:
+
+      Normal Response = 50 ms
+
+      GC Pause = 2 seconds
+
+      Request Response = 2050 ms
+
+      Therefore GC increases latency.
+
+   -> Memory Pressure
+
+      Application running with insufficient memory.
+
+      Example:
+
+      Required Memory = 16 GB
+
+      Available Memory = 4 GB
+
+      JVM performs:
+
+      - Frequent GC
+      - Memory cleanup
+
+      Response time increases.
+
+   -> CPU Saturation
+
+      CPU utilization becomes very high.
+
+      Example:
+
+      CPU Usage = 98%
+
+      New requests must wait for CPU cycles.
+
+      Processing slows down.
+
+      Latency increases.
+
+   -> Disk I/O Latency
+
+      Data needs to be read from disk.
+
+      Example:
+
+      Cache Miss
+         ↓
+      Read From Disk
+
+      Disk access is slower than memory access.
+
+      Therefore response time increases.
+
+   -> Cache Miss Latency
+
+      Example:
+
+      Client Request
+          ↓
+      Redis Cache
+
+      Cache Hit:
+      Response = 5 ms
+
+      Cache Miss:
+      Redis
+         ↓
+      Database
+         ↓
+      Response
+
+      Response = 300 ms
+
+      Cache miss significantly increases latency.
+
+   -> Serialization / Deserialization Latency
+
+      Objects converted into JSON/XML and vice versa.
+
+      Example:
+
+      Java Object
+         ↓
+      JSON Conversion
+         ↓
+      Network Transfer
+         ↓
+      JSON to Object
+
+      Large payloads require more conversion time.
+
+      Latency increases.
+
+   -> Large Payload Latency
+
+      Example:
+
+      API Response Size
+
+      Case 1:
+      10 KB
+
+      Case 2:
+      50 MB
+
+      Larger payload requires:
+
+      - More serialization
+      - More network transfer
+      - More deserialization
+
+      Therefore response becomes slower.
+
+   -> External API Dependency Latency
+
+      Example:
+
+      Order Service
+         ↓
+      Payment Gateway
+         ↓
+      Bank API
+
+      Your service waits until external service responds.
+
+      If external API takes:
+
+      5 seconds
+
+      Your response also becomes slow.
+
+   -> Microservice Chain Latency
+
+      Example:
+
+      Client
+         ↓
+      Service-A
+         ↓
+      Service-B
+         ↓
+      Service-C
+         ↓
+      Service-D
+
+      Every service adds latency.
+
+      Example:
+
+      A = 50 ms
+      B = 70 ms
+      C = 80 ms
+      D = 100 ms
+
+      Total
+
+      = 300 ms
+
+      Latency accumulates across services.
+
+   -> Fan-Out Latency
+
+      Example:
+
+      Service-A calls
+
+      - Service-B
+      - Service-C
+      - Service-D
+      - Service-E
+
+      simultaneously.
+
+      Response waits for all services.
+
+      Slowest service determines completion time.
+
+      More dependencies increase chance of slow response.
+
+   -> Retry Latency
+
+      Example:
+
+      Payment API Timeout
+
+      Retry-1 → Failed
+      Retry-2 → Failed
+      Retry-3 → Success
+
+      Total latency becomes:
+
+      Original Request Time
+      + Retry Delays
+
+      User experiences higher response time.
+
+   -> Circuit Breaker Recovery Latency
+
+      Example:
+
+      External Service Down
+
+      Circuit Breaker opens.
+
+      Fallback executes.
+
+      During recovery period:
+
+      Some requests may experience increased latency.
+
+   -> Cold Start Latency
+
+      Common in:
+
+      - AWS Lambda
+      - Azure Functions
+      - Serverless Platforms
+
+      Example:
+
+      Function Idle for 30 minutes
+
+      New Request Arrives
+
+      Platform starts container.
+
+      Startup Time:
+
+      1-5 seconds
+
+      First request becomes slow.
+
+   -> Geographic Distance Latency
+
+      Example:
+
+      User in India
+
+      Server in US
+
+      Every request crosses continents.
+
+      Even without any processing delay,
+
+      network travel time increases latency.
+
+   -> Distributed Transaction Latency
+
+      Example:
+
+      Order Service
+      Payment Service
+      Inventory Service
+
+      All must complete successfully.
+
+      Additional coordination increases latency.
+
+      Examples:
+
+      - 2PC
+      - Saga Orchestration
+
+   -> Observability/Logging Overhead
+
+      Example:
+
+      Every request writes:
+
+      - Logs
+      - Metrics
+      - Audit Records
+
+      Excessive logging increases processing time.
+
+      Therefore latency increases.
+
+   -> Important Summary
+
+      Major Latency Contributors:
+
+      - Network Latency
+      - DNS Latency
+      - SSL Handshake
+      - Load Balancer Delay
+      - Application Processing
+      - Database Query Time
+      - Missing Index
+      - Lock Contention
+      - Connection Pool Exhaustion
+      - Thread Pool Exhaustion
+      - Queue Waiting
+      - GC Pause
+      - Memory Pressure
+      - CPU Saturation
+      - Disk I/O
+      - Cache Miss
+      - Serialization/Deserialization
+      - Large Payloads
+      - External APIs
+      - Microservice Chains
+      - Fan-Out
+      - Retries
+      - Circuit Breakers
+      - Cold Starts
+      - Geographic Distance
+      - Distributed Transactions
+      - Logging Overhead
+
+      Total Latency is usually a combination of multiple factors, not a single bottleneck.
+      
+===================================================! Interview Question !===================================================
+
+   -> Q1. What is Latency?
+
+      Answer:
+
+      Latency is the time taken by a system to process a request and return a response.
+
+      Example:
+
+      Client → API → Database → Response
+
+      Total time taken = 150 ms
+
+      Therefore:
+      Latency = 150 ms
+
+   -> Q2. What is a Percentile?
+
+      Answer:
+
+      A percentile indicates the response time below which a certain percentage of requests are completed.
+
+      Example:
+
+      P95 = 200 ms
+
+      Meaning:
+      - 95% requests completed within 200 ms.
+      - 5% requests took more than 200 ms.
+
+      Percentiles provide a much better picture of user experience than average latency.
+
+   -> Q3. What is P50 Latency?
+
+      Answer:
+
+      P50 represents the 50th percentile latency.
+
+      It is also called Median Latency.
+
+      Meaning:
+
+      - 50% requests completed within P50 latency.
+      - 50% requests took longer than P50 latency.
+
+      Example:
+
+      P50 = 80 ms
+
+      Meaning:
+      Half of all requests completed within 80 ms.
+
+   -> Q4. What is the difference between P50, P90, P95 and P99?
+
+      Answer:
+
+      P50:
+      - Typical user experience.
+      - Median latency.
+
+      P90:
+      - Experience of 90% users.
+
+      P95:
+      - Experience of nearly all users.
+      - Commonly used in SLAs.
+
+      P99:
+      - Experience of slowest users.
+      - Measures tail latency.
+
+      Example:
+
+      P50 = 50 ms
+      P90 = 100 ms
+      P95 = 200 ms
+      P99 = 1000 ms
+
+      Interpretation:
+
+      - Most users receive responses quickly.
+      - A small percentage experience delays up to 1 second.
+
+   -> Q5. Why is Average Latency Not a Good Metric?
+
+      Answer:
+
+      Average latency hides outliers.
+
+      Example:
+
+      Latencies:
+
+      100
+      100
+      100
+      100
+      4600
+
+      Average:
+
+      = 1000 ms
+
+      Reality:
+
+      - 80% users received response in 100 ms.
+      - Only 1 user experienced 4600 ms delay.
+
+      Therefore:
+
+      Average latency does not accurately represent user experience.
+
+      Percentiles provide better visibility.
+
+   -> Q6. Why Do Companies Use P95/P99 Instead of Average Latency?
+
+      Answer:
+
+      Because users are impacted by slow requests, not average requests.
+
+      Example:
+
+      Average = 100 ms
+
+      But:
+
+      P99 = 5000 ms
+
+      Meaning:
+
+      1% users are waiting 5 seconds.
+
+      Those users will complain even though average latency looks excellent.
+
+      Therefore:
+
+      P95 and P99 are better indicators of real-world performance.
+
+   -> Q7. What is Tail Latency?
+
+      Answer:
+
+      Tail latency refers to the latency of the slowest requests in the system.
+
+      Usually measured using:
+
+      P99
+      P99.9
+
+      Example:
+
+      P50 = 50 ms
+      P95 = 200 ms
+      P99 = 5000 ms
+
+      Here:
+
+      1% requests are taking around 5 seconds.
+
+      These are called Tail Requests.
+
+      Their latency is called Tail Latency.
+
+   -> Q8. Why Is Tail Latency Important?
+
+      Answer:
+
+      Even a small percentage of slow requests can impact a large number of users.
+
+      Example:
+
+      Total Requests = 100 Million/day
+
+      P99 = 5 seconds
+
+      Meaning:
+
+      1% requests are slow
+
+      1% of 100 Million
+
+      = 1 Million Requests
+
+      Therefore:
+
+      1 Million users are experiencing poor performance.
+
+      This is why companies focus heavily on P99 latency.
+
+   -> Q9. Which Latency Metric Would You Monitor in Production?
+
+      Answer:
+
+      I would monitor:
+
+      - Average Latency
+      - P50
+      - P90
+      - P95
+      - P99
+      - Error Rate
+      - Throughput
+
+      However, the most important metrics for user experience are:
+
+      P95 and P99
+
+      because they reveal slow requests hidden by averages.
+
+   -> Q10. What Does P99 = 1000 ms Mean?
+
+      Answer:
+
+      It means:
+
+      99% requests completed within 1000 ms.
+
+      Only 1% requests took longer than 1000 ms.
+
+      Example:
+
+      Total Requests = 1,000,000
+
+      Requests within 1000 ms:
+
+      = 990,000
+
+      Requests slower than 1000 ms:
+
+      = 10,000
+
+   -> Q11. If P50 is Good but P99 is Bad, What Does It Indicate?
+
+      Answer:
+
+      Example:
+
+      P50 = 50 ms
+      P95 = 200 ms
+      P99 = 5000 ms
+
+      Interpretation:
+
+      - Most requests are fast.
+      - A small percentage are extremely slow.
+
+      This usually indicates tail latency problems.
+
+      Possible causes may include:
+
+      - GC pauses
+      - Slow DB queries
+      - Network delays
+      - Resource contention
+      - Cache misses
+
+      (Root cause investigation required.)
+
+   -> Q12. What Is a Good Latency Distribution?
+
+      Answer:
+
+      Example:
+
+      P50 = 50 ms
+      P90 = 70 ms
+      P95 = 90 ms
+      P99 = 120 ms
+
+      Observation:
+
+      Gap between percentiles is small.
+
+      Meaning:
+
+      Most users are experiencing similar response times.
+
+      This indicates a healthy and predictable system.
+
+   -> Q13. What Is a Bad Latency Distribution?
+
+      Answer:
+
+      Example:
+
+      P50 = 50 ms
+      P90 = 100 ms
+      P95 = 200 ms
+      P99 = 5000 ms
+
+      Observation:
+
+      Huge jump between P95 and P99.
+
+      Meaning:
+
+      A small percentage of requests are suffering severe delays.
+
+      This indicates a tail latency issue.
+
+   -> Q14. Why Are SLAs Usually Defined Using P95 or P99?
+
+      Answer:
+
+      Because achieving perfect P100 latency is practically impossible.
+
+      There can always be:
+
+      - Hardware issues
+      - Network delays
+      - Temporary spikes
+
+      Therefore companies define SLAs such as:
+
+      P95 < 200 ms
+
+      or
+
+      P99 < 500 ms
+
+      which provides a realistic performance target.
+
+   -> Q15. In a Microservices Architecture, Why Does P99 Matter More?
+
+      Answer:
+
+      Example:
+
+      Client
+         ↓
+      Service A
+         ↓
+      Service B
+         ↓
+      Service C
+
+      Each service may individually have good latency.
+
+      However:
+
+      End-user latency depends on the slowest component involved in serving the request.
+
+      Therefore:
+
+      Even if only a small percentage of requests are slow in each service, the overall system latency can become much worse.
+
+      Hence P99 monitoring becomes critical in distributed systems.
+
+   -> Q16. SDE2 Level Answer (2-Minute Summary)
+
+      Latency measures the time taken to process a request and return a response.
+
+      Instead of relying on average latency, modern systems use latency percentiles such as P50, P90, P95 and P99.
+
+      P50 represents median latency, while P95 and P99 help identify slow requests and tail latency issues.
+
+      For example, P95 = 200 ms means 95% of requests completed within 200 ms and only 5% exceeded that time.
+
+      Tail latency is typically measured using P99 because even a small percentage of slow requests can impact thousands or millions of users in large-scale systems.
+
+      Therefore, production systems and SLAs commonly focus on P95 and P99 rather than average latency.
+
+============================================! SDE 2 Interview !====================================================
+
+=> Mathematical Calculation of P50, P95 and P99 in Real Production Systems
+
+   -> How Latency Data Appears in Production?
+
+      In production, requests do not arrive in sorted order.
+
+      Example:
+
+      Request-1  = 120 ms
+      Request-2  = 35 ms
+      Request-3  = 900 ms
+      Request-4  = 50 ms
+      Request-5  = 180 ms
+      Request-6  = 70 ms
+      Request-7  = 40 ms
+      Request-8  = 250 ms
+      Request-9  = 150 ms
+      Request-10 = 60 ms
+
+      This is how monitoring tools receive latency data.
+
+      Latencies are collected continuously from incoming requests.
+
+   -> Step 1: Collect All Request Latencies
+
+      Example:
+
+      120
+      35
+      900
+      50
+      180
+      70
+      40
+      250
+      150
+      60
+
+      Total Requests (N)
+
+      N = 10
+
+   -> Step 2: Sort Latencies in Ascending Order
+
+      Sorted Dataset:
+
+      35
+      40
+      50
+      60
+      70
+      120
+      150
+      180
+      250
+      900
+
+      Percentile calculation always happens on sorted data.
+
+   -> Step 3: Calculate Percentile Position
+
+      Formula:
+
+      Position = (Percentile / 100) × N
+
+      Where:
+
+      Percentile = 50, 95, 99 etc.
+
+      N = Total Number of Requests
+
+   -> P50 Calculation
+
+      Formula:
+
+      Position = (50 / 100) × 10
+
+      Position = 5
+
+      5th value in sorted dataset:
+
+      70
+
+      Therefore:
+
+      P50 = 70 ms
+
+      Meaning:
+
+      50% requests completed within 70 ms.
+
+   -> P95 Calculation
+
+      Formula:
+
+      Position = (95 / 100) × 10
+
+      Position = 9.5
+
+      Position lies between:
+
+      9th value = 250
+      10th value = 900
+
+      Approximate P95:
+
+      P95 ≈ 250-900 ms range
+
+      In production monitoring tools,
+      interpolation is usually applied.
+
+      Simplified Interview Answer:
+
+      P95 is around the value near the 95th percentile position.
+
+   -> P99 Calculation
+
+      Formula:
+
+      Position = (99 / 100) × 10
+
+      Position = 9.9
+
+      Position is extremely close to last value.
+
+      Therefore:
+
+      P99 ≈ 900 ms
+
+      Meaning:
+
+      99% requests completed within roughly 900 ms.
+
+   -> Why Small Dataset Gives Inaccurate P95/P99?
+
+      Example:
+
+      Total Requests = 10
+
+      P95 and P99 are almost pointing to last request.
+
+      Therefore:
+
+      Small datasets do not provide reliable percentiles.
+
+      Real production systems use:
+
+      Thousands
+      Millions
+      Billions
+
+      of requests.
+
+   -> Real Production Example
+
+      Suppose Amazon receives:
+
+      1,000,000 requests
+
+      Latency values are collected for all requests.
+
+      After sorting:
+
+      Position for P50
+
+      = 50% × 1,000,000
+
+      = 500,000
+
+      Therefore:
+
+      500,000th latency value
+      becomes P50.
+
+      ------------------------------------------------
+
+      Position for P95
+
+      = 95% × 1,000,000
+
+      = 950,000
+
+      Therefore:
+
+      950,000th latency value
+      becomes P95.
+
+      ------------------------------------------------
+
+      Position for P99
+
+      = 99% × 1,000,000
+
+      = 990,000
+
+      Therefore:
+
+      990,000th latency value
+      becomes P99.
+
+   -> Large Production Dataset Example
+
+      Assume after sorting:
+
+      Request #500,000  = 50 ms
+      Request #950,000  = 220 ms
+      Request #990,000  = 850 ms
+
+      Therefore:
+
+      P50 = 50 ms
+
+      P95 = 220 ms
+
+      P99 = 850 ms
+
+      Interpretation:
+
+      50% requests complete within 50 ms.
+
+      95% requests complete within 220 ms.
+
+      99% requests complete within 850 ms.
+
+   -> Another Production Example
+
+      Total Requests
+
+      = 10,000
+
+      Sorted Latency Positions:
+
+      P50 Position
+
+      = 50% × 10,000
+
+      = 5,000
+
+      ------------------------------------------------
+
+      P95 Position
+
+      = 95% × 10,000
+
+      = 9,500
+
+      ------------------------------------------------
+
+      P99 Position
+
+      = 99% × 10,000
+
+      = 9,900
+
+      Suppose:
+
+      5000th Request Latency = 80 ms
+      9500th Request Latency = 250 ms
+      9900th Request Latency = 1200 ms
+
+      Therefore:
+
+      P50 = 80 ms
+      P95 = 250 ms
+      P99 = 1200 ms
+
+   -> How Monitoring Tools Calculate Percentiles?
+
+      Production systems do NOT sort billions of requests manually.
+
+      Monitoring tools use:
+
+      - Histogram
+      - HDR Histogram
+      - TDigest
+      - Prometheus Histogram
+      - Datadog Distribution
+      - New Relic Percentile Engine
+
+      These algorithms estimate percentiles efficiently.
+
+   -> Histogram Based Calculation
+
+      Example:
+
+      Latency Buckets
+
+      0-50 ms       → 4000 requests
+      50-100 ms     → 3000 requests
+      100-200 ms    → 2000 requests
+      200-500 ms    → 900 requests
+      >500 ms       → 100 requests
+
+      Total Requests
+
+      = 10,000
+
+      Monitoring systems determine where:
+
+      50%
+      95%
+      99%
+
+      of requests lie and calculate percentiles.
+
+      This is much more efficient than sorting billions of records.
+
+   -> Why Percentiles Are Better Than Average?
+
+      Example:
+
+      999 Requests = 50 ms
+      1 Request    = 10 sec
+
+      Average:
+
+      ≈ 60 ms
+
+      Looks excellent.
+
+      ------------------------------------------------
+
+      P50
+
+      = 50 ms
+
+      ------------------------------------------------
+
+      P95
+
+      = 50 ms
+
+      ------------------------------------------------
+
+      P99
+
+      = 50 ms
+
+      ------------------------------------------------
+
+      P99.9
+
+      ≈ 10 sec
+
+      Percentiles reveal the outlier that average hides.
+
+   -> Important Formula Summary
+
+      Step 1:
+      Collect all request latencies.
+
+      ------------------------------------------------
+
+      Step 2:
+      Sort latency values in ascending order.
+
+      ------------------------------------------------
+
+      Step 3:
+
+      Position
+
+      = (Percentile / 100) × Total Requests
+
+      ------------------------------------------------
+
+      P50 Position
+
+      = 0.50 × N
+
+      ------------------------------------------------
+
+      P95 Position
+
+      = 0.95 × N
+
+      ------------------------------------------------
+
+      P99 Position
+
+      = 0.99 × N
+
+      ------------------------------------------------
+
+      Value at that position
+      = Corresponding Percentile Latency
+
+      ------------------------------------------------
+
+      Production systems usually calculate these
+      using Histograms, HDR Histograms, TDigest,
+      Prometheus Histograms and Datadog Distributions.
+
+=> Latency Histogram
+
+   -> Why Do We Need Histogram?
+
+      Suppose Amazon receives:
+
+      100 Million Requests/Day
+
+      Storing every latency value:
+
+      23 ms
+      45 ms
+      71 ms
+      112 ms
+      500 ms
+      ...
+
+      is expensive.
+
+      Problems:
+
+      - Huge memory usage
+      - Huge storage usage
+      - Expensive sorting
+      - Slow percentile calculation
+
+      Therefore:
+
+      Instead of storing every latency,
+      monitoring systems group latencies into buckets.
+
+   -> What Is A Histogram?
+
+      Histogram = Bucket-based distribution of latency values.
+
+      Instead of storing:
+
+      12 ms
+      14 ms
+      15 ms
+      17 ms
+      18 ms
+
+      Store:
+
+      0-20 ms bucket = 5 requests
+
+      This is called a histogram bucket.
+
+   -> Example Production Data
+
+      Actual Request Latencies:
+
+      15
+      20
+      25
+      35
+      40
+      45
+      60
+      75
+      100
+      200
+
+      Instead of storing all values,
+      create buckets.
+
+   -> Histogram Buckets
+
+      Bucket Range        Request Count
+
+      0-50 ms             6
+      50-100 ms           2
+      100-200 ms          1
+      >200 ms             1
+
+      This is a histogram.
+
+   -> How Histogram Looks Visually
+
+      Requests
+
+      6 | ██████
+      5 |
+      4 |
+      3 |
+      2 | ██
+      1 | █  █
+      0 +------------------------
+
+          0-50
+          50-100
+          100-200
+          >200
+
+      Each bar represents number of requests
+      in that latency range.
+
+   -> Production Example (Amazon Product Page)
+
+      Bucket          Requests
+
+      <=50 ms         50,000
+      <=100 ms        30,000
+      <=200 ms        15,000
+      <=500 ms        4,000
+      >500 ms         1,000
+
+      Total
+
+      = 100,000 Requests
+
+      Now we can calculate percentiles.
+
+   -> How P50 Is Calculated From Histogram?
+
+      Example:
+
+      Bucket          Requests
+
+      <=50 ms         50,000
+      <=100 ms        30,000
+      <=200 ms        15,000
+      <=500 ms        4,000
+      >500 ms         1,000
+
+      Total Requests
+
+      = 100,000
+
+      P50 Position
+
+      = 50% × 100,000
+
+      = 50,000
+
+      First bucket already contains
+      50,000 requests.
+
+      Therefore:
+
+      P50 ≈ 50 ms
+
+   -> How P95 Is Calculated?
+
+      Total Requests
+
+      = 100,000
+
+      P95 Position
+
+      = 95,000
+
+      Cumulative Count:
+
+      <=50 ms
+
+      = 50,000
+
+      ----------------------------
+
+      <=100 ms
+
+      = 50,000 + 30,000
+
+      = 80,000
+
+      ----------------------------
+
+      <=200 ms
+
+      = 80,000 + 15,000
+
+      = 95,000
+
+      Therefore:
+
+      P95 ≈ 200 ms
+
+   -> How P99 Is Calculated?
+
+      P99 Position
+
+      = 99,000
+
+      Cumulative Count:
+
+      <=50 ms
+
+      = 50,000
+
+      <=100 ms
+
+      = 80,000
+
+      <=200 ms
+
+      = 95,000
+
+      <=500 ms
+
+      = 99,000
+
+      Therefore:
+
+      P99 ≈ 500 ms
+
+   -> Important Concept: Cumulative Buckets
+
+      Modern monitoring tools use:
+
+      Cumulative Buckets
+
+      Example:
+
+      le=50 ms     = 50,000
+      le=100 ms    = 80,000
+      le=200 ms    = 95,000
+      le=500 ms    = 99,000
+      le=+Inf      = 100,000
+
+      Meaning:
+
+      le = Less Than Or Equal To
+
+      le=100 ms means:
+
+      Requests taking <=100 ms
+
+      = 80,000
+
+      NOT
+
+      Requests between 50-100 ms
+
+      This is extremely important for Prometheus.
+
+   -> Why Histograms Are Used In Production?
+
+      Benefits:
+
+      - Low memory usage
+      - Fast percentile calculation
+      - Scales to billions of requests
+      - Easy aggregation across servers
+      - Works well with Prometheus
+      - Works well with Grafana
+
+   -> Histogram Vs Raw Data
+
+      Raw Latency Storage
+
+      15
+      22
+      35
+      41
+      57
+      92
+      ...
+
+      Pros:
+      - Accurate
+
+      Cons:
+      - Huge storage
+      - Expensive
+
+      --------------------------------
+
+      Histogram
+
+      <=50 ms = 50000
+      <=100 ms = 80000
+      <=200 ms = 95000
+
+      Pros:
+      - Small storage
+      - Fast percentile calculation
+
+      Cons:
+      - Approximation
+
+   -> Real Interview Point
+
+      When interviewer asks:
+
+      "How does Prometheus calculate P95 latency?"
+
+      Answer:
+
+      Prometheus does not store every request latency.
+      It stores latency histograms in buckets.
+      Percentiles such as P50, P95 and P99 are estimated
+      from cumulative histogram buckets using functions
+      like histogram_quantile().
+
+   -> One Line Summary
+
+      Histogram = Distribution of request latencies grouped
+      into buckets, allowing monitoring systems to efficiently
+      calculate P50, P95 and P99 without storing every request.
+
+=> Prometheus & Grafana Percentile Calculation (P50, P95, P99)
+
+   -> Why Prometheus Does Not Store Every Latency Value?
+
+      Consider:
+
+      Amazon receives
+
+      100 Million Requests/Day
+
+      Storing every latency:
+
+      10 ms
+      25 ms
+      40 ms
+      100 ms
+      500 ms
+      ...
+
+      would require enormous storage.
+
+      Therefore:
+
+      Prometheus stores latency distribution
+      using Histograms instead of storing every latency value.
+
+   -> Prometheus Histogram Components
+
+      A Histogram generates three metrics:
+
+      1. _bucket
+      2. _count
+      3. _sum
+
+      Example Metric Name:
+
+      http_request_duration_seconds
+
+      Prometheus automatically creates:
+
+      http_request_duration_seconds_bucket
+      http_request_duration_seconds_count
+      http_request_duration_seconds_sum
+
+   -> Understanding _bucket
+
+      Buckets store cumulative request counts.
+
+      Example:
+
+      Bucket Latency         Request Count
+
+      le="0.1"              500
+      le="0.2"              900
+      le="0.5"              990
+      le="1.0"              999
+      le="+Inf"             1000
+
+      Here:
+
+      le = Less Than Or Equal To
+
+      Meaning:
+
+      le="0.1"
+
+      Requests ≤ 100 ms
+
+      = 500
+
+      ------------------------------------------------
+
+      le="0.2"
+
+      Requests ≤ 200 ms
+
+      = 900
+
+      ------------------------------------------------
+
+      le="0.5"
+
+      Requests ≤ 500 ms
+
+      = 990
+
+      ------------------------------------------------
+
+      le="+Inf"
+
+      Total Requests
+
+      = 1000
+
+   -> Understanding _count
+
+      _count stores total request count.
+
+      Example:
+
+      http_request_duration_seconds_count
+
+      = 1000
+
+      Meaning:
+
+      Total requests observed
+
+      = 1000
+
+   -> Understanding _sum
+
+      _sum stores total latency accumulated.
+
+      Example:
+
+      Total Latency
+
+      = 80,000 ms
+
+      Prometheus stores:
+
+      http_request_duration_seconds_sum
+
+      = 80
+
+      (seconds)
+
+      This metric helps calculate average latency.
+
+   -> Calculating Average Latency
+
+      Formula:
+
+      Average Latency
+
+      = _sum / _count
+
+      Example:
+
+      _sum   = 80 seconds
+      _count = 1000 requests
+
+      Average
+
+      = 80 / 1000
+
+      = 0.08 sec
+
+      = 80 ms
+
+   -> Why Histogram Buckets Are Important?
+
+      Average Latency:
+
+      = 80 ms
+
+      Looks healthy.
+
+      But average hides outliers.
+
+      To calculate:
+
+      - P50
+      - P95
+      - P99
+
+      Prometheus uses histogram buckets.
+
+   -> Example Histogram Data
+
+      Bucket             Count
+
+      le="0.1"           500
+      le="0.2"           900
+      le="0.5"           990
+      le="1.0"           999
+      le="+Inf"          1000
+
+      Total Requests
+
+      = 1000
+
+   -> How P50 Is Found?
+
+      P50 Position
+
+      = 50%
+
+      = 500 requests
+
+      Bucket Analysis:
+
+      le="0.1"
+
+      already contains
+
+      500 requests
+
+      Therefore:
+
+      P50 ≈ 100 ms
+
+   -> How P95 Is Found?
+
+      P95 Position
+
+      = 95%
+
+      = 950 requests
+
+      Bucket Analysis:
+
+      ≤100 ms = 500
+
+      ≤200 ms = 900
+
+      ≤500 ms = 990
+
+      Request number 950 falls inside:
+
+      ≤500 ms bucket
+
+      Therefore:
+
+      P95 ≈ 500 ms
+
+   -> How P99 Is Found?
+
+      P99 Position
+
+      = 99%
+
+      = 990 requests
+
+      Bucket Analysis:
+
+      ≤500 ms
+
+      = 990 requests
+
+      Therefore:
+
+      P99 ≈ 500 ms
+
+   -> Prometheus Function Used For Percentiles
+
+      Prometheus uses:
+
+      histogram_quantile()
+
+      Syntax:
+
+      histogram_quantile(
+         percentile,
+         histogram_bucket_data
+      )
+
+      Examples:
+
+      P50
+
+      histogram_quantile(0.50,...)
+
+      ------------------------------------------------
+
+      P95
+
+      histogram_quantile(0.95,...)
+
+      ------------------------------------------------
+
+      P99
+
+      histogram_quantile(0.99,...)
+
+   -> Production Query For P95
+
+      histogram_quantile(
+         0.95,
+         sum(
+             rate(
+                 http_request_duration_seconds_bucket[5m]
+             )
+         ) by (le)
+      )
+
+      Meaning:
+
+      Step 1:
+      Calculate request rate for each bucket.
+
+      Step 2:
+      Group buckets using le.
+
+      Step 3:
+      Calculate 95th percentile.
+
+   -> Production Query For P99
+
+      histogram_quantile(
+         0.99,
+         sum(
+             rate(
+                 http_request_duration_seconds_bucket[5m]
+             )
+         ) by (le)
+      )
+
+      This returns P99 latency.
+
+   -> Why rate() Is Used?
+
+      Histogram buckets continuously increase.
+
+      Example:
+
+      Current Count
+
+      = 1,000,000
+
+      After 5 minutes
+
+      = 1,200,000
+
+      Prometheus needs recent traffic only.
+
+      Therefore:
+
+      rate()
+
+      calculates requests per second
+      over the selected time window.
+
+   -> Why sum() By (le) Is Used?
+
+      Production systems have multiple servers.
+
+      Example:
+
+      Server-1
+      Server-2
+      Server-3
+      Server-4
+
+      Each server has its own histogram.
+
+      sum() by (le)
+
+      combines all histograms into a
+      single application-level histogram.
+
+   -> How Grafana Uses These Metrics?
+
+      Grafana does not calculate percentiles.
+
+      Grafana only visualizes results.
+
+      Flow:
+
+      Application
+           ↓
+      Histogram Metrics
+           ↓
+      Prometheus
+           ↓
+      histogram_quantile()
+           ↓
+      P50 / P95 / P99
+           ↓
+      Grafana Dashboard
+
+   -> Typical Grafana Dashboard
+
+      P50 = 40 ms
+
+      P95 = 180 ms
+
+      P99 = 850 ms
+
+      Error Rate = 0.2%
+
+      Throughput = 20K Requests/sec
+
+      Engineers use these values to monitor production performance.
+
+   -> Real Production Example
+
+      Amazon Product Page
+
+      Dashboard:
+
+      P50 = 50 ms
+
+      P95 = 220 ms
+
+      P99 = 900 ms
+
+      Interpretation:
+
+      50% users receive response within 50 ms.
+      95% users receive response within 220 ms.
+      99% users receive response within 900 ms.
+      Remaining 1% requests are slower.
+
+   -> Histogram Vs Summary
+
+      Prometheus supports:
+
+      Histogram:
+
+      - Preferred in distributed systems
+      - Supports aggregation
+      - Works across multiple servers
+      - Recommended for Grafana dashboards
+
+      Summary:
+
+      - Calculates percentile locally
+      - Cannot aggregate across instances
+      - Less commonly used at scale
+
+      Therefore Large organizations prefer Histograms.
+
+   -> Complete Flow
+
+      Incoming Request
+             ↓
+      Measure Request Latency
+             ↓
+      Store In Histogram Buckets
+             ↓
+      Prometheus Scrapes Metrics
+             ↓
+      histogram_quantile()
+             ↓
+      P50 / P95 / P99 Calculated
+             ↓
+      Grafana Dashboard Displays Results
+
+   -> Important Summary
+
+      Prometheus stores latency using:
+
+      - _bucket
+      - _count
+      - _sum
+
+      ------------------------------------------------
+
+      _bucket
+
+      Stores cumulative request counts
+      for latency ranges.
+
+      ------------------------------------------------
+
+      _count
+
+      Stores total requests.
+
+      ------------------------------------------------
+
+      _sum
+
+      Stores total latency.
+
+      ------------------------------------------------
+
+      Average Latency
+
+      = _sum / _count
+
+      ------------------------------------------------
+
+      P50
+
+      histogram_quantile(0.50,...)
+
+      ------------------------------------------------
+
+      P95
+
+      histogram_quantile(0.95,...)
+
+      ------------------------------------------------
+
+      P99
+
+      histogram_quantile(0.99,...)
+
+      ------------------------------------------------
+
+      Grafana does not calculate percentiles.
+
+      Prometheus calculates percentiles.
+
+      Grafana only visualizes the results.
+
+      ------------------------------------------------
+
+      This is the standard latency monitoring architecture used by Amazon, Netflix, Microsoft, Google and most modern microservice-based systems.
+
+=> How Amazon, Netflix and Large-Scale Companies Reduce P99 Latency
+
+   -> Why Companies Focus More on P99 than P50?
+
+      Example:
+
+      P50 = 50 ms
+      P95 = 120 ms
+      P99 = 5000 ms
+
+      Observation:
+
+      Most users receive responses quickly.
+
+      However:
+
+      1% of requests are taking 5 seconds.
+
+      For:
+
+      100 Million Requests/Day
+
+      1% = 1 Million Slow Requests
+
+      Therefore:
+
+      Improving P99 provides significantly better
+      user experience than improving P50.
+
+   -> Strategy 1: Reduce Service Dependencies
+
+      Bad Design:
+
+      Client
+         ↓
+      Service-A
+         ↓
+      Service-B
+         ↓
+      Service-C
+         ↓
+      Service-D
+
+      Every service adds latency.
+
+      Example:
+
+      A = 50 ms
+      B = 50 ms
+      C = 50 ms
+      D = 50 ms
+
+      Total
+
+      = 200 ms
+
+      More services also increase probability
+      of encountering a slow service.
+
+      ------------------------------------------------
+
+      Better Design:
+
+      Client
+         ↓
+      Service-A
+
+      Fewer hops
+
+      Lower P99
+
+   -> Strategy 2: Parallel Processing
+
+      Sequential Processing:
+
+      Product Service      = 100 ms
+      Review Service       = 150 ms
+      Inventory Service    = 200 ms
+
+      Total
+
+      = 450 ms
+
+      ------------------------------------------------
+
+      Parallel Processing:
+
+                     Product
+                   ↗
+      Request →
+                   ↘
+                     Review
+
+                   ↘
+                     Inventory
+
+      Total Latency
+
+      = Maximum Latency
+
+      = 200 ms
+
+      Amazon and Netflix heavily use parallel calls.
+
+   -> Strategy 3: Aggressive Caching
+
+      Without Cache:
+
+      Client
+         ↓
+      Database
+
+      Response
+
+      = 500 ms
+
+      ------------------------------------------------
+
+      With Redis Cache:
+
+      Client
+         ↓
+      Redis
+
+      Response
+
+      = 5 ms
+
+      Benefits:
+
+      - Reduces database load
+      - Reduces P99 latency
+      - Reduces tail spikes
+
+      Common Technologies:
+
+      - Redis
+      - Memcached
+      - CDN
+
+   -> Strategy 4: Content Delivery Network (CDN)
+
+      Problem:
+
+      User in India
+
+      Server in US
+
+      Every request crosses continents.
+
+      ------------------------------------------------
+
+      Solution:
+
+      User
+         ↓
+      Nearby CDN Node
+
+      Static content served locally.
+
+      Examples:
+
+      - Netflix Videos
+      - Amazon Images
+      - CSS
+      - JavaScript
+
+      Benefit:
+
+      Reduced network latency.
+
+   -> Strategy 5: Data Locality
+
+      Bad Design:
+
+      User (India)
+         ↓
+      Application (India)
+         ↓
+      Database (US)
+
+      Every query crosses regions.
+
+      ------------------------------------------------
+
+      Better Design:
+
+      User (India)
+         ↓
+      Application (India)
+         ↓
+      Database (India)
+
+      Benefit:
+
+      Lower network latency.
+
+   -> Strategy 6: Database Optimization
+
+      Slow Query Example:
+
+      SELECT *
+      FROM ORDERS
+      WHERE CUSTOMER_ID=100
+
+      Full table scan:
+
+      2 seconds
+
+      ------------------------------------------------
+
+      With Index:
+
+      Query
+
+      = 20 ms
+
+      Common Optimizations:
+
+      - Indexing
+      - Query tuning
+      - Partitioning
+      - Sharding
+      - Read Replicas
+
+      Direct impact on P99.
+
+   -> Strategy 7: Read Through Cache
+
+      Flow:
+
+      Client
+         ↓
+      Cache
+
+      Cache Hit
+
+      → Immediate Response
+
+      ------------------------------------------------
+
+      Cache Miss
+
+      Cache
+         ↓
+      Database
+         ↓
+      Cache Update
+
+      Future requests become faster.
+
+      Frequently used by Amazon product services.
+
+   -> Strategy 8: Connection Pool Tuning
+
+      Problem:
+
+      Pool Size = 50
+
+      Incoming Requests = 1000
+
+      Many requests wait for connections.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Proper connection pool sizing.
+
+      Benefits:
+
+      - Less waiting
+      - Reduced queue latency
+      - Lower P99
+
+      Common Pools:
+
+      - HikariCP
+      - Apache DBCP
+
+   -> Strategy 9: Thread Pool Tuning
+
+      Problem:
+
+      Worker Threads = 100
+
+      Requests = 1000
+
+      900 requests wait.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Proper thread sizing.
+
+      Benefits:
+
+      - Less queueing
+      - Faster request execution
+      - Lower tail latency
+
+   -> Strategy 10: Asynchronous Processing
+
+      Bad Design:
+
+      Order API
+         ↓
+      Send Email
+         ↓
+      Send SMS
+         ↓
+      Generate PDF
+         ↓
+      Return Response
+
+      Response
+
+      = 5 seconds
+
+      ------------------------------------------------
+
+      Better Design:
+
+      Order API
+         ↓
+      Save Order
+         ↓
+      Publish Event
+         ↓
+      Return Response
+
+      Background Workers:
+
+      - Email
+      - SMS
+      - PDF
+
+      Benefit:
+
+      Reduced user-facing latency.
+
+   -> Strategy 11: Timeout Management
+
+      Problem:
+
+      Payment Service hangs.
+
+      Request waits:
+
+      30 seconds
+
+      ------------------------------------------------
+
+      Solution:
+
+      Timeout = 2 seconds
+
+      After timeout:
+
+      - Fail Fast
+      - Trigger Fallback
+
+      Benefit:
+
+      Prevents extreme P99 spikes.
+
+   -> Strategy 12: Circuit Breaker Pattern
+
+      Problem:
+
+      Downstream Service becomes slow.
+
+      All requests wait.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Circuit Breaker Opens
+
+      Request
+         ↓
+      Fallback Response
+
+      Instead of:
+
+      Waiting 30 seconds
+
+      Response returned immediately.
+
+      Technologies:
+
+      - Resilience4j
+      - Hystrix (Legacy)
+
+   -> Strategy 13: Bulkhead Pattern
+
+      Problem:
+
+      Recommendation Service becomes overloaded.
+
+      Thread exhaustion affects:
+
+      - Checkout
+      - Payment
+      - Inventory
+
+      ------------------------------------------------
+
+      Solution:
+
+      Separate thread pools.
+
+      Example:
+
+      Pool-A → Checkout
+      Pool-B → Recommendations
+
+      Benefit:
+
+      Failure isolation.
+
+   -> Strategy 14: Hedged Requests (Netflix & Google)
+
+      Problem:
+
+      Occasionally one server becomes slow.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Send duplicate request after small delay.
+
+      Example:
+
+      Request-1 → Server-A
+
+      If response not received in 50 ms
+
+      Send:
+
+      Request-2 → Server-B
+
+      Use first successful response.
+
+      Benefit:
+
+      Significant reduction in tail latency.
+
+      Commonly used in:
+
+      - Google
+      - Netflix
+      - Large Search Systems
+
+   -> Strategy 15: Request Replication
+
+      Similar to Hedged Requests.
+
+      Example:
+
+      Read Request
+
+      simultaneously sent to:
+
+      Replica-1
+      Replica-2
+      Replica-3
+
+      Fastest response wins.
+
+      Benefit:
+
+      Lower P99.
+
+   -> Strategy 16: Load Balancing
+
+      Problem:
+
+      One server overloaded.
+
+      Other servers idle.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Distribute requests evenly.
+
+      Examples:
+
+      - Round Robin
+      - Least Connections
+      - Weighted Routing
+
+      Benefit:
+
+      Better resource utilization.
+
+   -> Strategy 17: Autoscaling
+
+      Problem:
+
+      Traffic spike.
+
+      CPU = 95%
+
+      Requests begin waiting.
+
+      ------------------------------------------------
+
+      Solution:
+
+      Add more instances automatically.
+
+      Kubernetes HPA:
+
+      CPU > 70%
+           ↓
+      Scale Out
+
+      Benefit:
+
+      Reduced queue latency.
+
+   -> Strategy 18: Reduce Payload Size
+
+      Problem:
+
+      API Response
+
+      = 50 MB
+
+      Network transfer becomes slow.
+
+      ------------------------------------------------
+
+      Solution:
+
+      - Compression
+      - Pagination
+      - Field Filtering
+
+      Benefit:
+
+      Faster serialization and transfer.
+
+   -> Strategy 19: Use Read Replicas
+
+      Problem:
+
+      One database handles:
+
+      Reads + Writes
+
+      ------------------------------------------------
+
+      Solution:
+
+      Primary DB
+
+      → Writes
+
+      Read Replicas
+
+      → Reads
+
+      Benefit:
+
+      Reduced database contention.
+
+   -> Strategy 20: Latency Budget
+
+      Large companies define latency budgets.
+
+      Example:
+
+      Target P99
+
+      = 500 ms
+
+      Allocation:
+
+      Gateway       = 50 ms
+      Service-A     = 100 ms
+      Service-B     = 100 ms
+      Database      = 150 ms
+      Network       = 100 ms
+
+      Total
+
+      = 500 ms
+
+      Every team must stay within budget.
+
+   -> Real Amazon Product Page Example
+
+      User Opens Product
+
+      Parallel Calls:
+
+      - Product Service
+      - Pricing Service
+      - Review Service
+      - Inventory Service
+      - Recommendation Service
+
+      Additional Optimizations:
+
+      - Redis Cache
+      - CDN
+      - Read Replicas
+      - Autoscaling
+      - Circuit Breakers
+      - Timeout Controls
+
+      Goal:
+
+      Keep P99 under target latency.
+
+   -> Real Netflix Home Page Example
+
+      User Opens Netflix
+
+      Parallel Calls:
+
+      - User Profile
+      - Continue Watching
+      - Recommendations
+      - Trending
+      - Ads
+
+      Additional Optimizations:
+
+      - CDN
+      - Local Caching
+      - Hedged Requests
+      - Request Replication
+      - Asynchronous Processing
+
+      Goal:
+
+      Minimize tail latency and improve startup speed.
+
+   -> Important Summary
+
+      Common Techniques to Reduce P99:
+
+      - Reduce Service Hops
+      - Parallel Processing
+      - Caching
+      - CDN
+      - Data Locality
+      - Database Optimization
+      - Read Through Cache
+      - Connection Pool Tuning
+      - Thread Pool Tuning
+      - Async Processing
+      - Timeouts
+      - Circuit Breakers
+      - Bulkheads
+      - Hedged Requests
+      - Request Replication
+      - Load Balancing
+      - Autoscaling
+      - Payload Reduction
+      - Read Replicas
+      - Latency Budgets
+
+      Core Principle:
+
+      Reduce Waiting Time,
+      Reduce Slow Dependencies,
+      Reduce Tail Latency,
+      Keep P99 Close To P95.
+
+=> Tail Latency Amplification in Microservices
+
+   -> What is Tail Latency?
+
+      Tail Latency refers to the latency of the slowest requests
+      in a system.
+
+      It is usually measured using:
+
+      - P99
+      - P99.9
+
+      Example:
+
+      P50 = 50 ms
+      P95 = 150 ms
+      P99 = 3000 ms
+
+      Interpretation:
+
+      Most users receive responses quickly,
+      but a small percentage experience very high latency.
+
+      Those slow requests form the "Tail".
+
+   -> What is Tail Latency Amplification?
+
+      Tail Latency Amplification occurs when multiple services
+      participate in processing a request and the probability of
+      encountering a slow service increases.
+
+      As the number of service dependencies increases:
+
+      Overall System P99
+      becomes worse than
+      Individual Service P99.
+
+      This phenomenon is called:
+
+      Tail Latency Amplification.
+
+   -> Monolithic Application Example
+
+      Flow:
+
+      Client
+         ↓
+      Monolith
+         ↓
+      Database
+
+      Assume:
+
+      Monolith P99 = 100 ms
+
+      Therefore:
+
+      Application P99 = 100 ms
+
+      There are very few dependencies.
+
+      Probability of slow request remains low.
+
+   -> Microservices Example
+
+      Flow:
+
+      Client
+         ↓
+      API Gateway
+         ↓
+      Order Service
+         ↓
+      Inventory Service
+         ↓
+      Payment Service
+         ↓
+      Notification Service
+
+      Now multiple services participate
+      in processing a single request.
+
+      Every service can contribute to latency.
+
+   -> Understanding Probability of Slow Requests
+
+      Assume:
+
+      Each Service:
+
+      P99 = 100 ms
+
+      Meaning:
+
+      99% requests complete within 100 ms.
+
+      1% requests are slower.
+
+      ------------------------------------------------
+
+      One Service:
+
+      Slow Request Probability
+
+      = 1%
+
+      ------------------------------------------------
+
+      Ten Services:
+
+      Probability that at least one service
+      becomes slow is much higher.
+
+      Therefore:
+
+      End-to-End P99 becomes worse.
+
+   -> Example with 5 Microservices
+
+      Flow:
+
+      Client
+         ↓
+      Service-A
+         ↓
+      Service-B
+         ↓
+      Service-C
+         ↓
+      Service-D
+         ↓
+      Service-E
+
+      Assume:
+
+      Each Service:
+
+      P99 = 100 ms
+
+      Slow Request Probability
+
+      = 1%
+
+      ------------------------------------------------
+
+      Probability that all services are fast:
+
+      = 0.99 × 0.99 × 0.99 × 0.99 × 0.99
+
+      = 0.95099
+
+      ≈ 95%
+
+      ------------------------------------------------
+
+      Therefore:
+
+      Probability that at least one service is slow:
+
+      = 1 - 0.95099
+
+      ≈ 4.9%
+
+      Observation:
+
+      Even though each service has only
+      1% slow requests,
+
+      entire request now experiences
+      almost 5% probability of slowdown.
+
+      This is Tail Latency Amplification.
+
+   -> Sequential Call Amplification
+
+      Flow:
+
+      Client
+         ↓
+      Service-A
+         ↓
+      Service-B
+         ↓
+      Service-C
+         ↓
+      Service-D
+
+      Latencies:
+
+      A = 50 ms
+      B = 70 ms
+      C = 90 ms
+      D = 100 ms
+
+      Total Latency:
+
+      = 50 + 70 + 90 + 100
+
+      = 310 ms
+
+      ------------------------------------------------
+
+      If Service-C becomes slow:
+
+      C = 2000 ms
+
+      Total Latency:
+
+      = 2210 ms
+
+      One slow service affects
+      the entire request.
+
+   -> Parallel Call Amplification
+
+      Flow:
+
+                    Service-A
+                  ↗
+      Request →
+                  ↘
+                    Service-B
+
+                  ↘
+                    Service-C
+
+                  ↘
+                    Service-D
+
+      Latencies:
+
+      A = 100 ms
+      B = 120 ms
+      C = 150 ms
+      D = 2000 ms
+
+      Total Latency:
+
+      = Maximum Latency
+
+      = 2000 ms
+
+      Observation:
+
+      Even though 3 services are fast,
+
+      one slow service determines
+      overall response time.
+
+   -> Fan-Out Amplification
+
+      Fan-Out means:
+
+      One request triggering many downstream requests.
+
+      Example:
+
+                     Service-A
+                   ↗
+      Client → API →
+                   ↘
+                     Service-B
+
+                   ↘
+                     Service-C
+
+                   ↘
+                     Service-D
+
+                   ↘
+                     Service-E
+
+                   ↘
+                     Service-F
+
+                   ↘
+                     Service-G
+
+      As Fan-Out increases:
+
+      - More network calls
+      - More dependencies
+      - More chance of slow service
+
+      Therefore:
+
+      Tail latency grows rapidly.
+
+   -> Amazon Product Page Example
+
+      User Opens Product
+
+      Product Service calls:
+
+      - Pricing Service
+      - Review Service
+      - Inventory Service
+      - Recommendation Service
+      - Seller Service
+      - Shipping Service
+
+      Assume:
+
+      Each Service:
+
+      P99 = 100 ms
+
+      Individually everything looks healthy.
+
+      However:
+
+      Probability of encountering a slow service
+      increases significantly.
+
+      Therefore:
+
+      Product Page P99 becomes much higher.
+
+   -> Netflix Home Screen Example
+
+      User Opens Netflix
+
+      Home Page fetches:
+
+      - User Profile
+      - Continue Watching
+      - Trending Movies
+      - Recommendations
+      - Ads
+      - Watch History
+
+      Even if each dependency has excellent latency,
+
+      overall page latency depends on:
+
+      Slowest dependency.
+
+      Therefore:
+
+      Tail Latency Amplification occurs.
+
+   -> Why Tail Latency Amplification is Dangerous?
+
+      Example:
+
+      Single Service:
+
+      P99 = 100 ms
+
+      Looks excellent.
+
+      ------------------------------------------------
+
+      System with 100 Dependencies:
+
+      Overall P99 may become
+      several times larger.
+
+      User experiences:
+
+      - Slow page loads
+      - Delayed checkout
+      - Delayed search results
+
+      even though individual services appear healthy.
+
+   -> How Amazon and Netflix Reduce Tail Latency Amplification?
+
+      1. Reduce Service Dependencies
+
+         Less services
+         Less amplification
+
+      ------------------------------------------------
+
+      2. Parallel Processing
+
+         Reduce waiting time
+
+      ------------------------------------------------
+
+      3. Aggressive Caching
+
+         Avoid downstream calls
+
+      ------------------------------------------------
+
+      4. Timeout Control
+
+         Fail fast instead of waiting
+
+      ------------------------------------------------
+
+      5. Circuit Breakers
+
+         Avoid slow dependencies
+
+      ------------------------------------------------
+
+      6. Hedged Requests
+
+         Send backup request
+         when latency increases
+
+      ------------------------------------------------
+
+      7. Request Replication
+
+         Use fastest response
+
+      ------------------------------------------------
+
+      8. Latency Budgets
+
+         Every service receives
+         latency allocation
+
+      ------------------------------------------------
+
+      9. Load Balancing
+
+         Prevent overloaded nodes
+
+      ------------------------------------------------
+
+      10. Autoscaling
+
+         Handle traffic spikes
+
+   -> Tail at Scale Concept (Google)
+
+      Google introduced the concept:
+
+      "Tail at Scale"
+
+      Observation:
+
+      In large distributed systems,
+
+      user latency is usually determined by:
+
+      Slowest machine
+      Slowest service
+      Slowest dependency
+
+      not
+
+      Average latency.
+
+      Therefore:
+
+      Tail latency becomes the primary
+      performance metric.
+
+   -> Important Mathematical Insight
+
+      If a request depends on N services:
+
+      Overall Probability of Fast Request
+
+      = Product of Fast Probabilities
+        of all services
+
+      Example:
+
+      5 Services
+
+      Each Service Fast
+
+      = 99%
+
+      Overall Fast Probability
+
+      = 0.99⁵
+
+      = 95%
+
+      Therefore:
+
+      Overall Slow Probability
+
+      = 5%
+
+      More services
+      → More amplification
+      → Worse P99
+
+   -> Important Summary
+
+      Tail Latency
+
+      = Slowest requests in a system
+        (typically P99/P99.9)
+
+      ------------------------------------------------
+
+      Tail Latency Amplification
+
+      = Increase in overall system latency
+        due to multiple service dependencies
+
+      ------------------------------------------------
+
+      Sequential Calls
+
+      Total Latency
+      = Sum of Service Latencies
+
+      ------------------------------------------------
+
+      Parallel Calls
+
+      Total Latency
+      = Maximum Service Latency
+
+      ------------------------------------------------
+
+      Fan-Out
+
+      = One request calling many services
+
+      ------------------------------------------------
+
+      More Dependencies
+
+      → Higher probability of slow service
+
+      → Worse End-to-End P99
+
+      ------------------------------------------------
+
+      This is one of the biggest performance
+      challenges in Amazon, Netflix, Google,
+      Microsoft and Uber scale systems.
